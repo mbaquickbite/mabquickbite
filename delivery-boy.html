@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MBA Delivery — Delivery Boy</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+  <style>
+    :root {
+      --blue:#1565C0; --blue-light:#E3F2FD; --blue-dark:#0D47A1;
+      --green:#2E7D32; --green-light:#E8F5E9;
+      --orange:#E65100; --orange-light:#FFF3E8;
+      --red:#C62828; --red-light:#FFEBEE;
+      --text:#1A1A1A; --muted:#666; --bg:#F0F4FF; --white:#fff; --border:#DDE3F0;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Poppins',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding-bottom:20px; }
+
+    .header { background:var(--blue); padding:14px 16px; display:flex; align-items:center; justify-content:space-between; }
+    .header-title { font-family:'Baloo 2',cursive; font-size:20px; font-weight:800; color:white; }
+    .online-toggle { display:flex; align-items:center; gap:8px; }
+    .toggle-label { color:white; font-size:12px; font-weight:600; }
+    .switch { width:44px; height:24px; background:#555; border-radius:12px; position:relative; cursor:pointer; transition:background 0.2s; }
+    .switch.on { background:var(--green); }
+    .switch::after { content:''; position:absolute; width:18px; height:18px; background:white; border-radius:50%; top:3px; left:3px; transition:left 0.2s; }
+    .switch.on::after { left:23px; }
+
+    .status-banner { padding:10px 16px; font-size:13px; font-weight:600; text-align:center; }
+    .status-banner.offline { background:#EEE; color:var(--muted); }
+    .status-banner.online  { background:var(--green-light); color:var(--green); }
+    .status-banner.delivering { background:var(--orange-light); color:var(--orange); }
+
+    .wrap { padding:14px 16px; }
+    .section-title { font-family:'Baloo 2',cursive; font-size:16px; font-weight:700; margin-bottom:10px; color:var(--text); }
+
+    /* Order card */
+    .order-card { background:var(--white); border-radius:16px; border:0.5px solid var(--border); padding:14px; margin-bottom:12px; }
+    .order-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .order-id { font-size:13px; font-weight:700; color:var(--blue); }
+    .order-time { font-size:11px; color:var(--muted); }
+    .order-customer { font-size:13px; margin-bottom:4px; }
+    .order-customer span { font-weight:600; }
+    .order-address { font-size:12px; color:var(--muted); margin-bottom:8px; line-height:1.4; display:flex; align-items:flex-start; gap:4px; }
+    .order-items { font-size:12px; color:var(--muted); margin-bottom:10px; }
+    .order-amount { font-size:15px; font-weight:800; color:var(--orange); margin-bottom:10px; }
+    .order-btns { display:flex; gap:8px; }
+    .btn-accept { flex:1; padding:10px; background:var(--green); color:white; border:none; border-radius:12px; font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; cursor:pointer; }
+    .btn-reject { padding:10px 14px; background:var(--red-light); color:var(--red); border:1px solid var(--red); border-radius:12px; font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; cursor:pointer; }
+
+    /* Active delivery card */
+    .active-delivery { background:var(--white); border-radius:16px; border:2px solid var(--orange); padding:14px; margin-bottom:12px; }
+    .active-title { font-size:14px; font-weight:700; color:var(--orange); margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+    .step-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+    .step-dot { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+    .step-dot.done { background:var(--green); }
+    .step-dot.active { background:var(--orange); animation:blink 1s infinite; }
+    .step-dot.pending { background:#ddd; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    .step-info { flex:1; }
+    .step-label { font-size:13px; font-weight:600; }
+    .step-sub { font-size:11px; color:var(--muted); }
+
+    .location-box { background:var(--blue-light); border-radius:10px; padding:10px 12px; margin:10px 0; display:flex; align-items:center; gap:8px; }
+    .location-box .loc-icon { font-size:20px; }
+    .location-box .loc-text { font-size:12px; color:var(--blue-dark); }
+    .location-box .loc-text b { font-size:13px; display:block; }
+
+    .action-btns { display:flex; gap:8px; margin-top:10px; }
+    .btn-picked { flex:1; padding:12px; background:var(--orange); color:white; border:none; border-radius:12px; font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; cursor:pointer; }
+    .btn-delivered { flex:1; padding:12px; background:var(--green); color:white; border:none; border-radius:12px; font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; cursor:pointer; }
+    .btn-call-customer { padding:12px 14px; background:var(--blue-light); color:var(--blue-dark); border:1px solid var(--blue); border-radius:12px; font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; cursor:pointer; text-decoration:none; display:flex; align-items:center; gap:4px; }
+
+    /* Location tracking status */
+    .loc-status { background:var(--white); border-radius:12px; padding:10px 14px; display:flex; align-items:center; gap:10px; margin-bottom:12px; border:0.5px solid var(--border); }
+    .loc-dot { width:10px; height:10px; border-radius:50%; background:#ccc; }
+    .loc-dot.active { background:var(--green); animation:blink 1s infinite; }
+    .loc-text-sm { font-size:12px; color:var(--muted); }
+    .loc-text-sm b { color:var(--text); }
+
+    .empty-state { text-align:center; padding:50px 20px; color:var(--muted); }
+    .empty-state .ei { font-size:48px; margin-bottom:10px; }
+    .earnings-card { background:var(--blue); border-radius:16px; padding:14px; color:white; margin-bottom:14px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; text-align:center; }
+    .earn-num { font-size:18px; font-weight:700; }
+    .earn-lbl { font-size:10px; opacity:0.8; margin-top:2px; }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-title">🛵 MBA Delivery</div>
+  <div class="online-toggle">
+    <span class="toggle-label" id="toggleLabel">Offline</span>
+    <div class="switch" id="onlineSwitch" onclick="toggleOnline()"></div>
+  </div>
+</div>
+
+<div class="status-banner offline" id="statusBanner">
+  🔴 Aap offline hain — Online ho kar orders receive karo
+</div>
+
+<div class="wrap">
+
+  <!-- Earnings -->
+  <div class="earnings-card">
+    <div><div class="earn-num" id="todayEarnings">₹0</div><div class="earn-lbl">Aaj ki kamai</div></div>
+    <div><div class="earn-num" id="todayOrders">0</div><div class="earn-lbl">Orders complete</div></div>
+    <div><div class="earn-num" id="todayKm">0 km</div><div class="earn-lbl">Distance</div></div>
+  </div>
+
+  <!-- Location tracking status -->
+  <div class="loc-status">
+    <div class="loc-dot" id="locDot"></div>
+    <div class="loc-text-sm">
+      Location: <b id="locText">Off</b>
+    </div>
+  </div>
+
+  <!-- Active delivery (shown when delivering) -->
+  <div id="activeDeliverySection" style="display:none">
+    <div class="section-title">📦 Active Delivery</div>
+    <div class="active-delivery" id="activeDeliveryCard">
+      <!-- filled by JS -->
+    </div>
+  </div>
+
+  <!-- Pending orders -->
+  <div id="pendingSection">
+    <div class="section-title">🔔 Naye Orders</div>
+    <div id="pendingOrders">
+      <div class="empty-state">
+        <div class="ei">🛵</div>
+        <p>Online ho — orders aayenge yahan</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Firebase Config -->
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAyOVaQGQKqt0yqJssQZ6t-E7qrA24yooo",
+  authDomain: "mba-foods-mithila.firebaseapp.com",
+  projectId: "mba-foods-mithila",
+  storageBucket: "mba-foods-mithila.firebasestorage.app",
+  messagingSenderId: "1056157932148",
+  appId: "1:1056157932148:web:5c2d044583f18c54e0cf21"
+};
+firebase.initializeApp(firebaseConfig);
+const db   = firebase.firestore();
+const auth = firebase.auth();
+</script>
+
+<script>
+// ── STATE ──
+let isOnline       = false;
+let locationWatchId = null;
+let currentLocation = null;
+let activeOrder    = null;
+let deliveryBoyId  = localStorage.getItem('mba_delivery_id') || 'boy_' + Date.now();
+let todayEarnings  = parseInt(localStorage.getItem('mba_today_earn') || '0');
+let todayOrders    = parseInt(localStorage.getItem('mba_today_orders') || '0');
+let ordersListener = null;
+
+localStorage.setItem('mba_delivery_id', deliveryBoyId);
+
+// ── ONLINE TOGGLE ──
+function toggleOnline() {
+  isOnline = !isOnline;
+  const sw     = document.getElementById('onlineSwitch');
+  const label  = document.getElementById('toggleLabel');
+  const banner = document.getElementById('statusBanner');
+
+  sw.classList.toggle('on', isOnline);
+  label.textContent = isOnline ? 'Online' : 'Offline';
+
+  if (isOnline) {
+    banner.className = 'status-banner online';
+    banner.textContent = '🟢 Aap online hain — orders aa sakte hain';
+    startLocationTracking();
+    listenForOrders();
+    updateDeliveryBoyStatus('online');
+  } else {
+    banner.className = 'status-banner offline';
+    banner.textContent = '🔴 Aap offline hain — Online ho kar orders receive karo';
+    stopLocationTracking();
+    if (ordersListener) ordersListener();
+    updateDeliveryBoyStatus('offline');
+  }
+}
+
+// ── LOCATION TRACKING ──
+function startLocationTracking() {
+  if (!navigator.geolocation) { alert('Location supported nahi hai'); return; }
+
+  document.getElementById('locDot').classList.add('active');
+
+  locationWatchId = navigator.geolocation.watchPosition(
+    pos => {
+      currentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: Math.round(pos.coords.accuracy) };
+      updateLocationDisplay(currentLocation);
+      if (activeOrder) pushLocationToFirestore(currentLocation);
+    },
+    err => { document.getElementById('locText').textContent = 'Error: ' + err.message; },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+  );
+}
+
+function stopLocationTracking() {
+  if (locationWatchId !== null) {
+    navigator.geolocation.clearWatch(locationWatchId);
+    locationWatchId = null;
+  }
+  document.getElementById('locDot').classList.remove('active');
+  document.getElementById('locText').textContent = 'Off';
+}
+
+function updateLocationDisplay(loc) {
+  // Reverse geocode using free API
+  fetch(`https://nominatim.openstreetmap.org/reverse?lat=${loc.lat}&lon=${loc.lng}&format=json`)
+    .then(r => r.json())
+    .then(data => {
+      const village = data.address.village || data.address.suburb || data.address.town || data.address.city || '';
+      const district = data.address.district || data.address.county || '';
+      const locStr = [village, district].filter(Boolean).join(', ');
+      document.getElementById('locText').textContent = locStr || `${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}`;
+
+      // Update active delivery card location too
+      if (activeOrder) {
+        const locEl = document.getElementById('currentLocText');
+        if (locEl) locEl.textContent = locStr || 'Location updating...';
+      }
+    })
+    .catch(() => {
+      document.getElementById('locText').textContent = `${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}`;
+    });
+}
+
+async function pushLocationToFirestore(loc) {
+  if (!activeOrder) return;
+  try {
+    await db.collection('deliveries').doc(activeOrder.id).update({
+      deliveryBoyLocation: {
+        lat: loc.lat,
+        lng: loc.lng,
+        accuracy: loc.acc,
+        updatedAt: new Date().toISOString(),
+        village: document.getElementById('locText').textContent
+      },
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch(e) { console.error('Location push failed:', e); }
+}
+
+async function updateDeliveryBoyStatus(status) {
+  try {
+    await db.collection('deliveryBoys').doc(deliveryBoyId).set({
+      status,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      location: currentLocation || null
+    }, { merge: true });
+  } catch(e) {}
+}
+
+// ── LISTEN FOR ORDERS ──
+function listenForOrders() {
+  ordersListener = db.collection('orders')
+    .where('status', '==', 'accepted')
+    .where('deliveryBoyId', '==', deliveryBoyId)
+    .onSnapshot(snap => {
+      const orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderPendingOrders(orders.filter(o => o.deliveryStatus === 'pending'));
+      const active = orders.find(o => ['picked', 'on_the_way'].includes(o.deliveryStatus));
+      if (active) showActiveDelivery(active);
+    });
+
+  // Also listen for newly assigned orders
+  db.collection('orders')
+    .where('deliveryBoyId', '==', deliveryBoyId)
+    .where('deliveryStatus', '==', 'assigned')
+    .onSnapshot(snap => {
+      snap.docs.forEach(d => {
+        const order = { id: d.id, ...d.data() };
+        showNewOrderAlert(order);
+      });
+    });
+}
+
+// ── RENDER PENDING ORDERS ──
+function renderPendingOrders(orders) {
+  const el = document.getElementById('pendingOrders');
+  if (!orders.length) {
+    el.innerHTML = `<div class="empty-state"><div class="ei">⏳</div><p>Koi order nahi abhi</p></div>`;
+    return;
+  }
+  el.innerHTML = orders.map(o => `
+    <div class="order-card">
+      <div class="order-top">
+        <span class="order-id">#${o.orderId || o.id.slice(-6).toUpperCase()}</span>
+        <span class="order-time">${timeAgo(o.createdAt)}</span>
+      </div>
+      <div class="order-customer">Customer: <span>${o.customerName || 'Customer'}</span></div>
+      <div class="order-address">📍 ${o.deliveryAddress || 'Address nahi diya'}</div>
+      <div class="order-items">📦 ${(o.items || []).map(i => i.name).join(', ')}</div>
+      <div class="order-amount">₹${o.totalAmount} • Commission: ₹${o.commission || 100}</div>
+      <div class="order-btns">
+        <button class="btn-accept" onclick="acceptOrder('${o.id}')">✅ Accept</button>
+        <button class="btn-reject" onclick="rejectOrder('${o.id}')">✗ Reject</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showNewOrderAlert(order) {
+  // Simple browser notification
+  if (Notification.permission === 'granted') {
+    new Notification('MBA Quick Bite', { body: `Naya order! ₹${order.totalAmount}`, icon: '/icon.png' });
+  }
+  Notification.requestPermission();
+}
+
+// ── ACCEPT / REJECT ──
+async function acceptOrder(orderId) {
+  await db.collection('orders').doc(orderId).update({
+    deliveryStatus: 'pending',
+    deliveryBoyId,
+    acceptedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  const snap = await db.collection('orders').doc(orderId).get();
+  activeOrder = { id: orderId, ...snap.data() };
+  showActiveDelivery(activeOrder);
+}
+
+async function rejectOrder(orderId) {
+  await db.collection('orders').doc(orderId).update({
+    deliveryBoyId: null, deliveryStatus: 'unassigned'
+  });
+}
+
+// ── ACTIVE DELIVERY ──
+function showActiveDelivery(order) {
+  activeOrder = order;
+  const status = order.deliveryStatus; // pending / picked / on_the_way / delivered
+  document.getElementById('activeDeliverySection').style.display = 'block';
+  document.getElementById('pendingSection').style.display = 'none';
+  document.getElementById('statusBanner').className = 'status-banner delivering';
+  document.getElementById('statusBanner').textContent = '🟠 Delivery chal rahi hai...';
+
+  const isPicked    = ['picked','on_the_way','delivered'].includes(status);
+  const isOnTheWay  = ['on_the_way','delivered'].includes(status);
+  const isDelivered = status === 'delivered';
+
+  document.getElementById('activeDeliveryCard').innerHTML = `
+    <div class="active-title">🏍️ Order #${order.orderId || order.id.slice(-6).toUpperCase()}</div>
+
+    <!-- Steps -->
+    <div class="step-row">
+      <div class="step-dot done">✓</div>
+      <div class="step-info">
+        <div class="step-label">Order Accept kiya</div>
+        <div class="step-sub">Restaurant pe jao</div>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-dot ${isPicked ? 'done' : 'active'}">
+        ${isPicked ? '✓' : '2'}
+      </div>
+      <div class="step-info">
+        <div class="step-label">Dhaba se uthao (Pickup)</div>
+        <div class="step-sub">${order.restaurantName || 'The Royal Cafe, Baingra Kothi'}</div>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-dot ${isOnTheWay ? 'done' : isPicked ? 'active' : 'pending'}">
+        ${isOnTheWay ? '✓' : '3'}
+      </div>
+      <div class="step-info">
+        <div class="step-label">Customer ki taraf jao</div>
+        <div class="step-sub">${order.deliveryAddress || 'Address set nahi'}</div>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-dot ${isDelivered ? 'done' : isOnTheWay ? 'active' : 'pending'}">
+        ${isDelivered ? '✓' : '4'}
+      </div>
+      <div class="step-info">
+        <div class="step-label">Deliver karo</div>
+        <div class="step-sub">Customer ke haath mein do</div>
+      </div>
+    </div>
+
+    <!-- Current location -->
+    <div class="location-box">
+      <span class="loc-icon">📍</span>
+      <div class="loc-text">
+        <b id="currentLocText">${document.getElementById('locText').textContent}</b>
+        Aapki abhi ki location (live)
+      </div>
+    </div>
+
+    <!-- Order detail -->
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">
+      📦 ${(order.items||[]).map(i=>i.name).join(', ') || 'Items'}<br>
+      💰 Total: ₹${order.totalAmount} &nbsp;|&nbsp; Commission: ₹${order.commission || 100}
+    </div>
+
+    <!-- Action buttons -->
+    <div class="action-btns">
+      ${!isPicked
+        ? `<button class="btn-picked" onclick="markPicked('${order.id}')">📦 Pickup Ho Gaya</button>`
+        : !isOnTheWay
+        ? `<button class="btn-picked" onclick="markOnTheWay('${order.id}')">🏍️ Nikal Gaya</button>`
+        : !isDelivered
+        ? `<button class="btn-delivered" onclick="markDelivered('${order.id}')">✅ Deliver Ho Gaya</button>`
+        : `<div style="text-align:center;color:var(--green);font-weight:700;width:100%">✅ Delivered!</div>`
+      }
+      <a href="tel:${order.customerPhone || ''}" class="btn-call-customer">📞 Call</a>
+    </div>
+  `;
+}
+
+// ── STATUS UPDATES ──
+async function markPicked(orderId) {
+  await db.collection('orders').doc(orderId).update({
+    deliveryStatus: 'picked',
+    pickedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    'deliveryBoyLocation': currentLocation
+  });
+  activeOrder.deliveryStatus = 'picked';
+  showActiveDelivery(activeOrder);
+}
+
+async function markOnTheWay(orderId) {
+  await db.collection('orders').doc(orderId).update({
+    deliveryStatus: 'on_the_way',
+    onTheWayAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  activeOrder.deliveryStatus = 'on_the_way';
+  showActiveDelivery(activeOrder);
+}
+
+async function markDelivered(orderId) {
+  await db.collection('orders').doc(orderId).update({
+    deliveryStatus: 'delivered',
+    status: 'delivered',
+    deliveredAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  // Earnings update
+  const commission = activeOrder.commission || 100;
+  todayEarnings += commission;
+  todayOrders   += 1;
+  localStorage.setItem('mba_today_earn',   todayEarnings);
+  localStorage.setItem('mba_today_orders', todayOrders);
+  document.getElementById('todayEarnings').textContent = '₹' + todayEarnings;
+  document.getElementById('todayOrders').textContent   = todayOrders;
+
+  activeOrder = null;
+  document.getElementById('activeDeliverySection').style.display = 'none';
+  document.getElementById('pendingSection').style.display = 'block';
+  document.getElementById('statusBanner').className = 'status-banner online';
+  document.getElementById('statusBanner').textContent = '🟢 Aap online hain — orders aa sakte hain';
+  alert('✅ Order deliver ho gaya! ₹' + commission + ' commission milega.');
+}
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const diff = Math.floor((Date.now() - d) / 60000);
+  return diff < 1 ? 'Abhi' : diff + ' min pehle';
+}
+
+// Init
+document.getElementById('todayEarnings').textContent = '₹' + todayEarnings;
+document.getElementById('todayOrders').textContent   = todayOrders;
+</script>
+</body>
+</html>

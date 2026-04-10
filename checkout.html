@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Checkout — MBA Quick Bite</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+  <style>
+    :root {
+      --saffron:#FF6B00; --saffron-light:#FFF3E8; --saffron-dark:#CC5500;
+      --green:#2E7D32;   --green-light:#E8F5E9;
+      --red:#C62828;     --red-light:#FFEBEE;
+      --blue:#1565C0;    --blue-light:#E3F2FD;
+      --text:#1A1A1A;    --muted:#777;
+      --bg:#FAFAF8;      --white:#fff; --border:#EDEDE8;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Nunito',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding-bottom:120px; }
+
+    /* Header */
+    .header { background:var(--saffron); padding:14px 16px; display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:100; }
+    .back { color:white; font-size:22px; text-decoration:none; line-height:1; }
+    .header-title { font-family:'Baloo 2',cursive; font-size:20px; font-weight:800; color:white; flex:1; }
+
+    /* Steps indicator */
+    .steps-bar { display:flex; align-items:center; padding:12px 20px; background:var(--white); border-bottom:1px solid var(--border); }
+    .step-item { display:flex; flex-direction:column; align-items:center; flex:1; }
+    .step-circle { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; margin-bottom:4px; }
+    .step-circle.done   { background:var(--green); color:white; }
+    .step-circle.active { background:var(--saffron); color:white; }
+    .step-circle.todo   { background:var(--border); color:var(--muted); }
+    .step-label { font-size:10px; font-weight:700; color:var(--muted); }
+    .step-label.active { color:var(--saffron); }
+    .step-line { flex:1; height:2px; background:var(--border); margin:0 4px; margin-bottom:14px; }
+    .step-line.done { background:var(--green); }
+
+    .wrap { padding:14px 16px; }
+
+    /* Section card */
+    .card { background:var(--white); border-radius:16px; border:1px solid var(--border); padding:14px; margin-bottom:14px; }
+    .card-title { font-family:'Baloo 2',cursive; font-size:15px; font-weight:700; margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+
+    /* Form fields */
+    .field { margin-bottom:12px; }
+    .field label { display:block; font-size:11px; font-weight:700; color:var(--muted); margin-bottom:5px; letter-spacing:0.04em; text-transform:uppercase; }
+    .field input, .field textarea, .field select {
+      width:100%; padding:11px 12px;
+      border:1.5px solid var(--border); border-radius:10px;
+      font-family:'Nunito',sans-serif; font-size:14px; color:var(--text);
+      background:var(--white); outline:none; transition:border-color 0.2s;
+    }
+    .field input:focus, .field textarea:focus { border-color:var(--saffron); }
+    .field textarea { resize:none; height:80px; }
+    .field-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+    /* Payment options */
+    .pay-options { display:flex; flex-direction:column; gap:10px; }
+    .pay-option { display:flex; align-items:center; gap:12px; padding:13px 14px; border:2px solid var(--border); border-radius:12px; cursor:pointer; transition:all 0.15s; }
+    .pay-option.selected { border-color:var(--saffron); background:var(--saffron-light); }
+    .pay-icon { font-size:24px; width:32px; text-align:center; }
+    .pay-info { flex:1; }
+    .pay-name { font-size:14px; font-weight:700; color:var(--text); }
+    .pay-sub  { font-size:11px; color:var(--muted); margin-top:1px; }
+    .pay-radio { width:18px; height:18px; border-radius:50%; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .pay-radio.checked { border-color:var(--saffron); }
+    .pay-radio.checked::after { content:''; width:8px; height:8px; border-radius:50%; background:var(--saffron); }
+
+    /* UPI input */
+    .upi-input-wrap { margin-top:10px; display:none; }
+    .upi-input-wrap.show { display:block; }
+    .upi-input-wrap input { border-color:var(--blue); }
+    .upi-apps { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+    .upi-app { display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 10px; border:1px solid var(--border); border-radius:8px; cursor:pointer; font-size:10px; font-weight:700; color:var(--muted); }
+    .upi-app:hover { border-color:var(--saffron); color:var(--saffron); }
+    .upi-app span { font-size:20px; }
+
+    /* Order summary */
+    .summary-row { display:flex; justify-content:space-between; font-size:13px; padding:6px 0; border-bottom:0.5px solid var(--border); }
+    .summary-row:last-child { border-bottom:none; }
+    .summary-row .k { color:var(--muted); }
+    .summary-row .v { font-weight:700; }
+    .total-row { display:flex; justify-content:space-between; font-size:16px; font-weight:800; padding:10px 0 0; margin-top:4px; border-top:2px solid var(--border); }
+    .total-row .amt { color:var(--saffron-dark); font-size:18px; }
+
+    /* Place order button */
+    .place-btn { position:fixed; bottom:0; left:0; right:0; padding:14px 16px; background:var(--bg); border-top:1px solid var(--border); }
+    .place-btn button { width:100%; padding:16px; background:var(--saffron); color:white; border:none; border-radius:16px; font-family:'Baloo 2',cursive; font-size:18px; font-weight:800; cursor:pointer; transition:transform 0.1s; }
+    .place-btn button:active { transform:scale(0.98); }
+    .place-btn button:disabled { background:#ccc; cursor:not-allowed; }
+
+    /* Loading overlay */
+    .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:999; align-items:center; justify-content:center; flex-direction:column; gap:12px; }
+    .overlay.show { display:flex; }
+    .spinner { width:44px; height:44px; border:4px solid rgba(255,255,255,0.3); border-top-color:white; border-radius:50%; animation:spin 0.8s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .overlay-text { color:white; font-size:14px; font-weight:700; }
+
+    /* Success screen */
+    .success-screen { display:none; position:fixed; inset:0; background:var(--bg); z-index:998; padding:30px 20px; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+    .success-screen.show { display:flex; }
+    .success-icon { font-size:80px; margin-bottom:16px; animation:pop 0.4s ease; }
+    @keyframes pop { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
+    .success-title { font-family:'Baloo 2',cursive; font-size:26px; font-weight:800; color:var(--green); margin-bottom:8px; }
+    .success-sub { font-size:14px; color:var(--muted); margin-bottom:6px; }
+    .order-id-box { background:var(--green-light); border-radius:12px; padding:10px 20px; margin:12px 0; }
+    .order-id-num { font-size:20px; font-weight:800; color:var(--green); }
+    .order-id-lbl { font-size:11px; color:var(--green); }
+    .success-btns { display:flex; flex-direction:column; gap:10px; width:100%; margin-top:16px; }
+    .btn-track { padding:14px; background:var(--saffron); color:white; border:none; border-radius:14px; font-family:'Baloo 2',cursive; font-size:16px; font-weight:800; cursor:pointer; text-decoration:none; display:block; }
+    .btn-home  { padding:12px; background:transparent; color:var(--saffron); border:2px solid var(--saffron); border-radius:14px; font-family:'Baloo 2',cursive; font-size:15px; font-weight:700; cursor:pointer; text-decoration:none; display:block; }
+
+    .items-mini { font-size:12px; color:var(--muted); margin-bottom:10px; }
+    .item-chip { display:inline-block; background:var(--saffron-light); color:var(--saffron-dark); border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700; margin:2px; }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <a href="cart.html" class="back">←</a>
+  <div class="header-title">💳 Checkout</div>
+</div>
+
+<!-- Steps bar -->
+<div class="steps-bar">
+  <div class="step-item">
+    <div class="step-circle done">✓</div>
+    <div class="step-label">Cart</div>
+  </div>
+  <div class="step-line done"></div>
+  <div class="step-item">
+    <div class="step-circle active">2</div>
+    <div class="step-label active">Checkout</div>
+  </div>
+  <div class="step-line"></div>
+  <div class="step-item">
+    <div class="step-circle todo">3</div>
+    <div class="step-label">Confirm</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- Delivery Address -->
+  <div class="card">
+    <div class="card-title">📍 Delivery Address</div>
+
+    <div class="field">
+      <label>Apna Naam *</label>
+      <input type="text" id="custName" placeholder="e.g. Manish Kumar" autocomplete="name"/>
+    </div>
+    <div class="field">
+      <label>Phone Number *</label>
+      <input type="tel" id="custPhone" placeholder="e.g. 9199606233" maxlength="10" autocomplete="tel"/>
+    </div>
+    <div class="field">
+      <label>Ghar / Flat No. *</label>
+      <input type="text" id="addrHouse" placeholder="e.g. Ghar no. 12, Near School"/>
+    </div>
+    <div class="field">
+      <label>Mohalla / Gaon *</label>
+      <input type="text" id="addrArea" placeholder="e.g. Baingra Kothi, Darbhanga"/>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Sheher *</label>
+        <input type="text" id="addrCity" placeholder="e.g. Darbhanga" value="Darbhanga"/>
+      </div>
+      <div class="field">
+        <label>PIN Code</label>
+        <input type="number" id="addrPin" placeholder="846001" maxlength="6"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Koi Khaas Baat? (optional)</label>
+      <textarea id="addrNote" placeholder="e.g. Neele gate ke paas, pehli manzil..."></textarea>
+    </div>
+  </div>
+
+  <!-- Payment -->
+  <div class="card">
+    <div class="card-title">💰 Payment Method</div>
+    <div class="pay-options">
+
+      <!-- COD -->
+      <div class="pay-option selected" id="pay-cod" onclick="selectPayment('cod')">
+        <div class="pay-icon">💵</div>
+        <div class="pay-info">
+          <div class="pay-name">Cash on Delivery</div>
+          <div class="pay-sub">Delivery pe cash dena hoga</div>
+        </div>
+        <div class="pay-radio checked" id="radio-cod"></div>
+      </div>
+
+      <!-- UPI -->
+      <div class="pay-option" id="pay-upi" onclick="selectPayment('upi')">
+        <div class="pay-icon">📲</div>
+        <div class="pay-info">
+          <div class="pay-name">UPI / PhonePe / GPay</div>
+          <div class="pay-sub">Instant payment online</div>
+        </div>
+        <div class="pay-radio" id="radio-upi"></div>
+      </div>
+
+      <!-- UPI ID input -->
+      <div class="upi-input-wrap" id="upiInputWrap">
+        <div class="field" style="margin-bottom:8px">
+          <label>UPI ID ya Number</label>
+          <input type="text" id="upiId" placeholder="e.g. 9199606233@paytm"/>
+        </div>
+        <div class="upi-apps">
+          <div class="upi-app" onclick="fillUpi('phonepe')"><span>💜</span>PhonePe</div>
+          <div class="upi-app" onclick="fillUpi('gpay')"><span>🔵</span>GPay</div>
+          <div class="upi-app" onclick="fillUpi('paytm')"><span>💙</span>Paytm</div>
+          <div class="upi-app" onclick="fillUpi('bhim')"><span>🟠</span>BHIM</div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px;">
+          ℹ️ UPI ID bhar ke order place karo — payment request aayegi
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Order Summary -->
+  <div class="card">
+    <div class="card-title">🧾 Order Summary</div>
+    <div class="items-mini" id="itemChips"><!-- filled by JS --></div>
+    <div id="summaryRows"><!-- filled by JS --></div>
+  </div>
+
+</div>
+
+<!-- Place Order Button -->
+<div class="place-btn">
+  <button id="placeBtn" onclick="placeOrder()">🚀 Order Place Karo — ₹<span id="btnAmt">0</span></button>
+</div>
+
+<!-- Loading Overlay -->
+<div class="overlay" id="overlay">
+  <div class="spinner"></div>
+  <div class="overlay-text">Order place ho raha hai...</div>
+</div>
+
+<!-- Success Screen -->
+<div class="success-screen" id="successScreen">
+  <div class="success-icon">🎉</div>
+  <div class="success-title">Order Ho Gaya!</div>
+  <div class="success-sub">Aapka order receive ho gaya hai</div>
+  <div class="order-id-box">
+    <div class="order-id-lbl">Order ID</div>
+    <div class="order-id-num" id="successOrderId">#MBA000</div>
+  </div>
+  <div class="success-sub" id="successPayMsg">Cash on delivery — delivery pe payment karna</div>
+  <div style="font-size:13px;color:var(--muted);margin-top:8px;" id="successEta">⏱️ Estimated time: 30–45 minutes</div>
+  <div class="success-btns">
+    <a class="btn-track" id="trackBtn" href="tracking.html">📍 Order Track Karo</a>
+    <a class="btn-home" href="index.html">🏠 Home pe Jao</a>
+  </div>
+</div>
+
+<!-- Firebase Config -->
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAyOVaQGQKqt0yqJssQZ6t-E7qrA24yooo",
+  authDomain: "mba-foods-mithila.firebaseapp.com",
+  projectId: "mba-foods-mithila",
+  storageBucket: "mba-foods-mithila.firebasestorage.app",
+  messagingSenderId: "1056157932148",
+  appId: "1:1056157932148:web:5c2d044583f18c54e0cf21"
+};
+firebase.initializeApp(firebaseConfig);
+const db   = firebase.firestore();
+const auth = firebase.auth();
+</script>
+
+<script>
+// ── CONFIG ──
+const MIN_FREE_DELIVERY = 150;
+const DELIVERY_CHARGE   = 49;
+const MBA_PHONE         = '9199606233'; // apna phone
+
+// ── STATE ──
+let paymentMethod   = 'cod';
+let cartItems       = JSON.parse(localStorage.getItem('mba_cart_items') || '[]');
+let cartQty         = JSON.parse(localStorage.getItem('mba_cart')       || '{}');
+let currentUser     = null;
+
+// Calculate totals
+const subtotal   = cartItems.reduce((s,i) => s + i.price * (cartQty[i.id] || i.qty || 1), 0);
+const isFree     = subtotal >= MIN_FREE_DELIVERY;
+const delivery   = isFree ? 0 : DELIVERY_CHARGE;
+const grandTotal = subtotal + delivery;
+
+// ── INIT ──
+auth.onAuthStateChanged(user => { currentUser = user; });
+
+// Pre-fill saved address
+const saved = JSON.parse(localStorage.getItem('mba_saved_address') || '{}');
+if (saved.name)    document.getElementById('custName').value  = saved.name;
+if (saved.phone)   document.getElementById('custPhone').value = saved.phone;
+if (saved.house)   document.getElementById('addrHouse').value = saved.house;
+if (saved.area)    document.getElementById('addrArea').value  = saved.area;
+if (saved.city)    document.getElementById('addrCity').value  = saved.city;
+if (saved.pin)     document.getElementById('addrPin').value   = saved.pin;
+
+// Render summary
+function renderSummary() {
+  // Item chips
+  document.getElementById('itemChips').innerHTML =
+    cartItems.map(i => `<span class="item-chip">${i.emoji || '🍽️'} ${i.name} ×${cartQty[i.id]||i.qty||1}</span>`).join('');
+
+  // Summary rows
+  document.getElementById('summaryRows').innerHTML = `
+    <div class="summary-row"><span class="k">Items (${cartItems.length})</span><span class="v">₹${subtotal}</span></div>
+    <div class="summary-row">
+      <span class="k">Delivery</span>
+      <span class="v" style="color:${isFree?'var(--green)':'var(--red)'}">
+        ${isFree ? 'FREE 🎉' : '₹' + DELIVERY_CHARGE}
+      </span>
+    </div>
+    ${isFree ? `<div class="summary-row"><span class="k" style="color:var(--green)">🎉 ₹150+ order — free delivery!</span><span></span></div>` : ''}
+    <div class="total-row"><span>Total Payable</span><span class="amt">₹${grandTotal}</span></div>
+  `;
+
+  document.getElementById('btnAmt').textContent = grandTotal;
+}
+renderSummary();
+
+// ── PAYMENT SELECTION ──
+function selectPayment(method) {
+  paymentMethod = method;
+  ['cod','upi'].forEach(m => {
+    document.getElementById('pay-' + m).classList.toggle('selected', m === method);
+    document.getElementById('radio-' + m).classList.toggle('checked', m === method);
+  });
+  document.getElementById('upiInputWrap').classList.toggle('show', method === 'upi');
+}
+
+function fillUpi(app) {
+  const phone = document.getElementById('custPhone').value || MBA_PHONE;
+  const suffixes = { phonepe:'@ybl', gpay:'@okicici', paytm:'@paytm', bhim:'@upi' };
+  document.getElementById('upiId').value = phone + (suffixes[app] || '@upi');
+}
+
+// ── VALIDATION ──
+function validate() {
+  const name  = document.getElementById('custName').value.trim();
+  const phone = document.getElementById('custPhone').value.trim();
+  const house = document.getElementById('addrHouse').value.trim();
+  const area  = document.getElementById('addrArea').value.trim();
+
+  if (!name)  { alert('Apna naam likhna zaroori hai!'); document.getElementById('custName').focus(); return false; }
+  if (!phone || phone.length < 10) { alert('Sahi phone number likhna zaroori hai!'); document.getElementById('custPhone').focus(); return false; }
+  if (!house) { alert('Ghar / Flat no. likhna zaroori hai!'); document.getElementById('addrHouse').focus(); return false; }
+  if (!area)  { alert('Mohalla / Gaon likhna zaroori hai!'); document.getElementById('addrArea').focus(); return false; }
+  if (!cartItems.length) { alert('Cart empty hai!'); window.location.href='index.html'; return false; }
+
+  return true;
+}
+
+// ── PLACE ORDER ──
+async function placeOrder() {
+  if (!validate()) return;
+
+  document.getElementById('placeBtn').disabled = true;
+  document.getElementById('overlay').classList.add('show');
+
+  const name  = document.getElementById('custName').value.trim();
+  const phone = document.getElementById('custPhone').value.trim();
+  const house = document.getElementById('addrHouse').value.trim();
+  const area  = document.getElementById('addrArea').value.trim();
+  const city  = document.getElementById('addrCity').value.trim();
+  const pin   = document.getElementById('addrPin').value.trim();
+  const note  = document.getElementById('addrNote').value.trim();
+  const upiId = document.getElementById('upiId').value.trim();
+
+  // Save address for next time
+  localStorage.setItem('mba_saved_address', JSON.stringify({ name, phone, house, area, city, pin }));
+
+  // Generate order ID
+  const orderId = 'MBA' + Date.now().toString().slice(-6);
+
+  const orderData = {
+    orderId,
+    status:          'pending',
+    deliveryStatus:  'pending',
+    paymentMethod,
+    paymentStatus:   paymentMethod === 'cod' ? 'pending_cod' : 'pending_upi',
+    upiId:           upiId || null,
+
+    // Customer info
+    customerName:    name,
+    customerPhone:   phone,
+    customerId:      currentUser?.uid || 'guest_' + phone,
+    customerEmail:   currentUser?.email || null,
+
+    // Address
+    deliveryAddress: `${house}, ${area}, ${city}${pin ? ' - ' + pin : ''}`,
+    addressNote:     note || null,
+    addressCity:     city,
+    addressPin:      pin || null,
+
+    // Items
+    items: cartItems.map(i => ({
+      id:       i.id,
+      name:     i.name,
+      price:    i.price,
+      qty:      cartQty[i.id] || i.qty || 1,
+      emoji:    i.emoji || '🍽️',
+      isVeg:    i.isVeg,
+      category: i.category || '',
+      ivClaimed: i.ivClaimed || false,
+    })),
+
+    // Amounts
+    subtotal,
+    deliveryCharge:  delivery,
+    totalAmount:     grandTotal,
+    commission:      100,
+
+    // Timestamps
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+
+    // Tracking
+    deliveryBoyId:       null,
+    deliveryBoyName:     null,
+    deliveryBoyPhone:    null,
+    deliveryBoyLocation: null,
+  };
+
+  try {
+    const docRef = await db.collection('orders').add(orderData);
+
+    // Save last order ID for tracking
+    localStorage.setItem('mba_last_order_id', docRef.id);
+    localStorage.setItem('mba_last_order_num', orderId);
+
+    // Clear cart
+    localStorage.removeItem('mba_cart');
+    localStorage.removeItem('mba_cart_items');
+
+    // WhatsApp notification to admin (optional)
+    const waMsg = encodeURIComponent(
+      `🍽️ *MBA Quick Bite — Naya Order!*\n` +
+      `Order ID: #${orderId}\n` +
+      `Customer: ${name} (${phone})\n` +
+      `Address: ${house}, ${area}, ${city}\n` +
+      `Items: ${cartItems.map(i=>`${i.name}×${cartQty[i.id]||1}`).join(', ')}\n` +
+      `Total: ₹${grandTotal}\n` +
+      `Payment: ${paymentMethod === 'cod' ? 'Cash on Delivery' : 'UPI - ' + upiId}`
+    );
+    localStorage.setItem('mba_wa_msg', `https://wa.me/${MBA_PHONE}?text=${waMsg}`);
+
+    // Show success
+    document.getElementById('overlay').classList.remove('show');
+    document.getElementById('successOrderId').textContent = '#' + orderId;
+    document.getElementById('trackBtn').href = `tracking.html?orderId=${docRef.id}`;
+    document.getElementById('successPayMsg').textContent =
+      paymentMethod === 'cod'
+        ? '💵 Cash on Delivery — delivery pe ₹' + grandTotal + ' dena'
+        : '📲 UPI payment request bheja jayega';
+    document.getElementById('successScreen').classList.add('show');
+
+    // Send WhatsApp to admin after 1 second
+    setTimeout(() => {
+      const waLink = localStorage.getItem('mba_wa_msg');
+      if (waLink) {
+        // Open WhatsApp silently (opens in new tab)
+        const a = document.createElement('a');
+        a.href = waLink;
+        a.target = '_blank';
+        a.click();
+      }
+    }, 1500);
+
+  } catch (err) {
+    document.getElementById('overlay').classList.remove('show');
+    document.getElementById('placeBtn').disabled = false;
+    alert('Order place nahi hua: ' + err.message + '\nDobara try karo ya call karo: ' + MBA_PHONE);
+    console.error(err);
+  }
+}
+
+// Empty cart check
+if (!cartItems.length) {
+  document.querySelector('.wrap').innerHTML = `
+    <div style="text-align:center;padding:60px 20px;color:var(--muted)">
+      <div style="font-size:48px;margin-bottom:12px">🛒</div>
+      <p style="font-size:15px;font-weight:700;margin-bottom:16px">Cart empty hai!</p>
+      <a href="index.html" style="display:inline-block;padding:12px 24px;background:var(--saffron);color:white;border-radius:12px;font-weight:800;text-decoration:none">Menu dekho</a>
+    </div>`;
+  document.querySelector('.place-btn').style.display = 'none';
+}
+</script>
+</body>
+</html>

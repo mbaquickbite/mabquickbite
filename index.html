@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MBA Quick Bite</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --saffron:  #FF6B00;
+      --saffron2: #FF8C00;
+      --saffron-light: #FFF3E8;
+      --saffron-dark:  #CC5500;
+      --green:    #2E7D32;
+      --green-light: #E8F5E9;
+      --red:      #C62828;
+      --red-light:#FFEBEE;
+      --dark:     #1A0A00;
+      --text:     #1A1A1A;
+      --muted:    #888;
+      --bg:       #FAFAF8;
+      --white:    #FFFFFF;
+      --border:   #EDEDE8;
+      --card-shadow: 0 4px 16px rgba(0,0,0,0.10);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    /* ── TOP HEADER ── */
+    .header {
+      background: var(--saffron);
+      padding: 14px 16px 12px;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .logo { font-family: 'Baloo 2', cursive; font-size: 22px; font-weight: 800; color: white; letter-spacing: -0.5px; }
+    .logo span { color: #FFE082; }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+    .call-header-btn {
+      display: flex; align-items: center; gap: 5px;
+      background: white; color: var(--saffron-dark);
+      border: none; border-radius: 20px;
+      padding: 6px 12px; font-family: 'Poppins', sans-serif;
+      font-size: 12px; font-weight: 700; cursor: pointer;
+      text-decoration: none;
+    }
+    .call-icon { font-size: 14px; }
+    .cart-btn {
+      position: relative; background: rgba(255,255,255,0.2);
+      border: none; border-radius: 50%; width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 18px; color: white;
+      text-decoration: none;
+    }
+    .cart-count {
+      position: absolute; top: -3px; right: -3px;
+      background: var(--red); color: white;
+      font-size: 9px; font-weight: 800;
+      width: 16px; height: 16px; border-radius: 50%;
+      display: none; align-items: center; justify-content: center;
+    }
+
+    /* Search bar */
+    .search-wrap { position: relative; }
+    .search-input {
+      width: 100%; padding: 9px 12px 9px 36px;
+      border: none; border-radius: 10px;
+      font-family: 'Poppins', sans-serif; font-size: 13px;
+      background: rgba(255,255,255,0.95); outline: none;
+      color: var(--text);
+    }
+    .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 15px; }
+
+    /* ── HERO BANNER ── */
+    .hero {
+      background: linear-gradient(135deg, #FF6B00 0%, #FF8C00 50%, #FFB300 100%);
+      padding: 18px 16px 20px;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; top: -20px; right: -20px;
+      width: 120px; height: 120px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 50%;
+    }
+    .hero::after {
+      content: '';
+      position: absolute; bottom: -30px; right: 30px;
+      width: 80px; height: 80px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 50%;
+    }
+    .hero-text { position: relative; z-index: 1; }
+    .hero-tag { display: inline-block; background: rgba(255,255,255,0.2); color: white; font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 20px; margin-bottom: 6px; letter-spacing: 0.05em; }
+    .hero-title { font-family: 'Baloo 2', cursive; font-size: 22px; font-weight: 800; color: white; line-height: 1.2; margin-bottom: 4px; }
+    .hero-sub { font-size: 12px; color: rgba(255,255,255,0.85); margin-bottom: 12px; }
+    .hero-btns { display: flex; gap: 8px; }
+    .hero-order-btn {
+      background: white; color: var(--saffron-dark);
+      border: none; border-radius: 20px; padding: 8px 18px;
+      font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 700;
+      cursor: pointer; text-decoration: none; display: inline-block;
+    }
+    .hero-call-btn {
+      background: rgba(255,255,255,0.2); color: white;
+      border: 1.5px solid rgba(255,255,255,0.5); border-radius: 20px;
+      padding: 8px 16px; font-family: 'Poppins', sans-serif;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      text-decoration: none; display: flex; align-items: center; gap: 5px;
+    }
+
+    /* ── CATEGORY TABS ── */
+    .section { padding: 0 16px; margin-bottom: 20px; }
+    .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; margin-top: 18px; }
+    .section-title { font-family: 'Baloo 2', cursive; font-size: 17px; font-weight: 700; color: var(--text); }
+    .see-all { font-size: 12px; color: var(--saffron); font-weight: 600; text-decoration: none; cursor: pointer; }
+
+    .cat-tabs { display: flex; gap: 8px; overflow-x: auto; padding: 4px 16px 8px; scrollbar-width: none; }
+    .cat-tabs::-webkit-scrollbar { display: none; }
+    .cat-tab {
+      flex-shrink: 0; display: flex; flex-direction: column;
+      align-items: center; gap: 4px; cursor: pointer;
+      padding: 8px 14px; border-radius: 12px;
+      border: 1.5px solid var(--border);
+      background: var(--white); transition: all 0.15s;
+      min-width: 72px;
+    }
+    .cat-tab.active { background: var(--saffron); border-color: var(--saffron); }
+    .cat-tab-emoji { font-size: 22px; }
+    .cat-tab-name { font-size: 11px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+    .cat-tab.active .cat-tab-name { color: white; }
+
+    /* ── ITEM GRID ── */
+    .items-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 16px; }
+
+    .item-card {
+      background: var(--white);
+      border-radius: 16px;
+      border: 0.5px solid var(--border);
+      box-shadow: var(--card-shadow);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      animation: fadeUp 0.3s ease both;
+      transition: transform 0.15s;
+    }
+    .item-card:active { transform: scale(0.97); }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+    .item-img-box {
+      width: 100%; aspect-ratio: 1;
+      background: var(--saffron-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 38px; position: relative; overflow: hidden;
+    }
+    .item-img-box img { width:100%; height:100%; object-fit:cover; }
+
+    /* Veg/NonVeg dot */
+    .veg-marker {
+      position: absolute; top: 6px; left: 6px;
+      width: 14px; height: 14px; border-radius: 3px;
+      border: 1.5px solid; background: white;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .veg-marker.veg  { border-color: var(--green); }
+    .veg-marker.veg::after  { content:''; width:6px; height:6px; border-radius:50%; background:var(--green); }
+    .veg-marker.nonveg { border-color: var(--red); }
+    .veg-marker.nonveg::after { content:''; width:6px; height:6px; border-radius:50%; background:var(--red); }
+
+    /* IV Badge on image */
+    .iv-badge {
+      position: absolute; top: 6px; right: 6px;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--red); border: 2px solid white;
+      display: flex; align-items: center; justify-content: center;
+      font-family: Georgia, serif; font-size: 11px;
+      font-weight: 900; color: white; cursor: pointer;
+      z-index: 2;
+    }
+    .iv-badge.iv-claimed { background: var(--green); }
+
+    .item-body { padding: 8px 10px 4px; flex: 1; }
+    .item-name { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 3px; line-height: 1.3; }
+
+    /* Price + Call row */
+    .price-call-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .item-price { font-size: 14px; font-weight: 800; color: var(--saffron-dark); }
+    .item-price .orig { font-size: 10px; color: #bbb; text-decoration: line-through; margin-left: 3px; font-weight: 400; }
+    .call-item-btn {
+      display: flex; align-items: center; gap: 3px;
+      background: var(--green-light); color: var(--green);
+      border: none; border-radius: 20px; padding: 3px 9px;
+      font-family: 'Poppins', sans-serif; font-size: 10px; font-weight: 700;
+      cursor: pointer; text-decoration: none;
+    }
+
+    /* IV Claim row */
+    .iv-row { display: flex; align-items: center; gap: 5px; padding: 0 10px 4px; }
+    .iv-dot { width: 20px; height: 20px; border-radius: 50%; background: var(--red); display: flex; align-items: center; justify-content: center; font-family: Georgia, serif; font-size: 9px; font-weight: 900; color: white; flex-shrink: 0; }
+    .iv-dot.claimed { background: var(--green); }
+    .iv-claim-btn { flex: 1; padding: 4px 0; background: var(--red); color: white; border: none; border-radius: 20px; font-size: 10px; font-weight: 800; cursor: pointer; font-family: 'Poppins', sans-serif; }
+    .iv-claim-btn.claimed { background: var(--green); cursor: default; }
+
+    /* ADD button */
+    .add-wrap { border-top: 0.5px solid var(--border); }
+    .add-btn { width: 100%; padding: 7px; background: var(--saffron-light); color: var(--saffron); border: none; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 800; cursor: pointer; transition: all 0.15s; }
+    .add-btn:hover { background: var(--saffron); color: white; }
+    .qty-ctrl { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 5px 0; background: var(--saffron); }
+    .qty-btn { background: white; border: none; width: 22px; height: 22px; border-radius: 50%; font-size: 14px; font-weight: 800; color: var(--saffron); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .qty-num { color: white; font-size: 13px; font-weight: 800; min-width: 18px; text-align: center; }
+
+    /* ── CALL FLOATING BUTTON ── */
+    .call-float {
+      position: fixed; bottom: 80px; right: 16px;
+      background: var(--green); color: white;
+      border: none; border-radius: 50%;
+      width: 52px; height: 52px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-size: 22px; cursor: pointer; z-index: 150;
+      box-shadow: 0 4px 16px rgba(46,125,50,0.4);
+      text-decoration: none;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 4px 16px rgba(46,125,50,0.4); }
+      50% { box-shadow: 0 4px 24px rgba(46,125,50,0.7); }
+    }
+    .call-float-label { font-size: 8px; font-weight: 700; margin-top: -2px; }
+
+    /* ── BOTTOM NAV ── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: white; border-top: 1px solid var(--border);
+      display: flex; z-index: 100;
+    }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 8px 0; cursor: pointer; text-decoration: none; }
+    .nav-icon { font-size: 20px; margin-bottom: 2px; }
+    .nav-label { font-size: 9px; font-weight: 600; color: var(--muted); }
+    .nav-item.active .nav-label { color: var(--saffron); }
+
+    /* ── CART BAR ── */
+    .cart-bar {
+      position: fixed; bottom: 56px; left: 0; right: 0;
+      background: var(--saffron); color: white;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px; font-family: 'Baloo 2', cursive;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      transform: translateY(200%); transition: transform 0.3s ease;
+      z-index: 99;
+    }
+    .cart-bar.show { transform: translateY(0); }
+    .cart-bar-amt { font-size: 16px; }
+
+    .pb { height: 20px; }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <div class="header-top">
+    <div class="logo">MBA <span>Quick Bite</span></div>
+    <div class="header-actions">
+      <!-- Call button in header -->
+      <a href="tel:+919199606233" class="call-header-btn">
+        <span class="call-icon">📞</span> Call
+      </a>
+      <a href="cart.html" class="cart-btn">
+        🛒
+        <span class="cart-count" id="cartCount">0</span>
+      </a>
+    </div>
+  </div>
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" type="text" id="searchInput" placeholder="Search momos, biryani, pizza..." oninput="handleSearch()"/>
+  </div>
+</div>
+
+<!-- ── HERO BANNER ── -->
+<div class="hero">
+  <div class="hero-text">
+    <div class="hero-tag">🚀 Fast Delivery — Patna</div>
+    <div class="hero-title">Ghar baithe<br>best food!</div>
+    <div class="hero-sub">Fresh • Fast • Local — ₹150+ order pe FREE delivery</div>
+    <div class="hero-btns">
+      <a href="menu.html" class="hero-order-btn">Order Now</a>
+      <a href="tel:+919199606233" class="hero-call-btn">📞 Call Us</a>
+    </div>
+  </div>
+</div>
+
+<!-- ── CATEGORY TABS ── -->
+<div class="cat-tabs" id="catTabs">
+  <div class="cat-tab active" onclick="setCategory('All')">
+    <div class="cat-tab-emoji">🍽️</div>
+    <div class="cat-tab-name">All Items</div>
+  </div>
+  <div class="cat-tab" onclick="setCategory('Fast Food')">
+    <div class="cat-tab-emoji">🍔</div>
+    <div class="cat-tab-name">Fast Food</div>
+  </div>
+  <div class="cat-tab" onclick="setCategory('Veg')">
+    <div class="cat-tab-emoji">🥦</div>
+    <div class="cat-tab-name">Veg</div>
+  </div>
+  <div class="cat-tab" onclick="setCategory('NonVeg')">
+    <div class="cat-tab-emoji">🍗</div>
+    <div class="cat-tab-name">Non-Veg</div>
+  </div>
+  <div class="cat-tab" onclick="setCategory('Bakery')">
+    <div class="cat-tab-emoji">🧁</div>
+    <div class="cat-tab-name">Bakery</div>
+  </div>
+</div>
+
+<!-- ── ITEMS SECTION ── -->
+<div style="padding: 0 16px;">
+  <div class="section-head">
+    <div class="section-title" id="sectionTitle">🍽️ All Items</div>
+    <span class="see-all" onclick="window.location.href='menu.html'">See all →</span>
+  </div>
+</div>
+<div class="items-grid" id="itemsGrid">
+  <!-- Filled by JS -->
+</div>
+
+<div class="pb"></div>
+
+<!-- ── FLOATING CALL BUTTON ── -->
+<a href="tel:+919199606233" class="call-float">
+  📞
+  <span class="call-float-label">Call</span>
+</a>
+
+<!-- ── CART BAR ── -->
+<div class="cart-bar" id="cartBar" onclick="window.location.href='cart.html'">
+  <div>
+    <div style="font-size:11px;opacity:0.85" id="cartBarItems">0 items</div>
+    <div>View Cart</div>
+  </div>
+  <div class="cart-bar-amt" id="cartBarAmt">₹0 →</div>
+</div>
+
+<!-- ── BOTTOM NAV ── -->
+<div class="bottom-nav">
+  <a href="index.html" class="nav-item active">
+    <div class="nav-icon">🏠</div>
+    <div class="nav-label">Home</div>
+  </a>
+  <a href="menu.html" class="nav-item">
+    <div class="nav-icon">🍽️</div>
+    <div class="nav-label">Menu</div>
+  </a>
+  <a href="tel:+919199606233" class="nav-item">
+    <div class="nav-icon">📞</div>
+    <div class="nav-label">Call</div>
+  </a>
+  <a href="cart.html" class="nav-item">
+    <div class="nav-icon">🛒</div>
+    <div class="nav-label">Cart</div>
+  </a>
+</div>
+
+<script>
+// ── CONFIG ──
+const PHONE         = '+919199606233'; // apna number daalo
+const ROMAN_DISC    = 4;               // ₹4 IV offer
+const NET_MARKUP    = 81;              // base + 81 = customer price
+
+// ── ITEMS DATA ──
+// 4 Fast Food + 4 Veg + 4 NonVeg + 4 Bakery (top items)
+const allItemsData = [
+  // ── Fast Food (top 4) ──
+  { id:'ff1', name:'Veg Burger',        cat:'Fast Food', emoji:'🍔', base:99,  isVeg:true  },
+  { id:'ff2', name:'French Fries',      cat:'Fast Food', emoji:'🍟', base:99,  isVeg:true  },
+  { id:'ff3', name:'Veg Steam Momos',   cat:'Fast Food', emoji:'🥟', base:99,  isVeg:true  },
+  { id:'ff4', name:'Veg Roll',          cat:'Fast Food', emoji:'🌯', base:99,  isVeg:true  },
+
+  // ── Veg (top 4) ──
+  { id:'vg1', name:'Masala Dosa',       cat:'Veg',       emoji:'🫓', base:70,  isVeg:true  },
+  { id:'vg2', name:'Paneer Butter Masala', cat:'Veg',    emoji:'🧀', base:250, isVeg:true  },
+  { id:'vg3', name:'Veg Biryani',       cat:'Veg',       emoji:'🍛', base:130, isVeg:true  },
+  { id:'vg4', name:'Mix Pizza',         cat:'Veg',       emoji:'🍕', base:239, isVeg:true  },
+
+  // ── NonVeg (top 4) ──
+  { id:'nv1', name:'Chicken Biryani',   cat:'NonVeg',    emoji:'🍛', base:140, isVeg:false },
+  { id:'nv2', name:'Chicken Roll',      cat:'NonVeg',    emoji:'🌯', base:100, isVeg:false },
+  { id:'nv3', name:'Mutton Biryani',    cat:'NonVeg',    emoji:'🍛', base:230, isVeg:false },
+  { id:'nv4', name:'Masala Chicken',    cat:'NonVeg',    emoji:'🍗', base:280, isVeg:false },
+
+  // ── Bakery (top 4) ──
+  { id:'bk1', name:'Veg Sandwich',      cat:'Bakery',    emoji:'🥪', base:119, isVeg:true  },
+  { id:'bk2', name:'Paneer Pakora',     cat:'Bakery',    emoji:'🧆', base:179, isVeg:true  },
+  { id:'bk3', name:'Veg Club Sandwich', cat:'Bakery',    emoji:'🥪', base:149, isVeg:true  },
+  { id:'bk4', name:'White Sauce Pasta', cat:'Bakery',    emoji:'🍝', base:130, isVeg:true  },
+];
+
+// Calculate final price
+allItemsData.forEach(i => { i.price = i.base + NET_MARKUP; });
+
+// ── STATE ──
+let cart    = JSON.parse(localStorage.getItem('mba_cart')       || '{}');
+let claimed = JSON.parse(localStorage.getItem('mba_iv_claimed') || '{}');
+let activeCategory = 'All';
+
+// ── RENDER ITEMS ──
+function getFiltered() {
+  const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+  return allItemsData.filter(item => {
+    if (activeCategory === 'Fast Food' && item.cat !== 'Fast Food') return false;
+    if (activeCategory === 'Veg'      && (!item.isVeg || item.cat === 'Fast Food')) return false;
+    if (activeCategory === 'NonVeg'   && item.isVeg) return false;
+    if (activeCategory === 'Bakery'   && item.cat !== 'Bakery') return false;
+    if (q && !item.name.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function renderItems() {
+  const filtered = getFiltered();
+  const grid = document.getElementById('itemsGrid');
+
+  if (!filtered.length) {
+    grid.innerHTML = `<div style="grid-column:span 2;text-align:center;padding:40px 0;color:#aaa;font-size:14px">Koi item nahi mila 🔍</div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map((item, idx) => {
+    const qty        = cart[item.id] || 0;
+    const isClaimed  = !!claimed[item.id];
+    const finalPrice = isClaimed ? item.price - ROMAN_DISC : item.price;
+
+    const priceHTML = isClaimed
+      ? `₹${finalPrice} <span class="orig">₹${item.price}</span>`
+      : `₹${finalPrice}`;
+
+    return `
+    <div class="item-card" style="animation-delay:${idx*40}ms">
+      <div class="item-img-box">
+        <span>${item.emoji}</span>
+        <div class="veg-marker ${item.isVeg ? 'veg' : 'nonveg'}"></div>
+        <div class="iv-badge ${isClaimed ? 'iv-claimed' : ''}" id="ivb_${item.id}"
+             onclick="claimIV('${item.id}')">IV</div>
+      </div>
+      <div class="item-body">
+        <div class="item-name">${item.name}</div>
+        <div class="price-call-row">
+          <div class="item-price" id="ipr_${item.id}">${priceHTML}</div>
+          <a href="tel:${PHONE}" class="call-item-btn">📞 Call</a>
+        </div>
+      </div>
+      <div class="iv-row">
+        <div class="iv-dot ${isClaimed ? 'claimed' : ''}" id="ivd_${item.id}">IV</div>
+        <button class="iv-claim-btn ${isClaimed ? 'claimed' : ''}"
+                id="ivc_${item.id}"
+                ${isClaimed ? 'disabled' : `onclick="claimIV('${item.id}')"`}>
+          ${isClaimed ? '✓ Claimed — ₹4 OFF' : 'Claim ₹4 OFF'}
+        </button>
+      </div>
+      <div class="add-wrap" id="ctrl_${item.id}">
+        ${qty === 0
+          ? `<button class="add-btn" onclick="addItem('${item.id}')">+ ADD</button>`
+          : `<div class="qty-ctrl">
+               <button class="qty-btn" onclick="removeItem('${item.id}')">−</button>
+               <span class="qty-num">${qty}</span>
+               <button class="qty-btn" onclick="addItem('${item.id}')">+</button>
+             </div>`
+        }
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── CATEGORY SWITCH ──
+function setCategory(cat) {
+  activeCategory = cat;
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+
+  const titles = { All:'🍽️ All Items', 'Fast Food':'🍔 Fast Food', Veg:'🥦 Veg Items', NonVeg:'🍗 Non-Veg', Bakery:'🧁 Bakery' };
+  document.getElementById('sectionTitle').textContent = titles[cat] || cat;
+  renderItems();
+}
+
+function handleSearch() { renderItems(); }
+
+// ── IV CLAIM ──
+function claimIV(id) {
+  if (claimed[id]) return;
+  claimed[id] = true;
+  localStorage.setItem('mba_iv_claimed', JSON.stringify(claimed));
+
+  const item = allItemsData.find(i => i.id === id);
+  if (!item) return;
+  const disc = item.price - ROMAN_DISC;
+
+  // Update badge
+  const badge = document.getElementById('ivb_' + id);
+  const dot   = document.getElementById('ivd_' + id);
+  const btn   = document.getElementById('ivc_' + id);
+  const prEl  = document.getElementById('ipr_' + id);
+
+  if (badge) badge.classList.add('iv-claimed');
+  if (dot)   dot.classList.add('claimed');
+  if (btn)   { btn.textContent = '✓ Claimed — ₹4 OFF'; btn.classList.add('claimed'); btn.disabled = true; }
+  if (prEl)  prEl.innerHTML = `₹${disc} <span class="orig">₹${item.price}</span>`;
+
+  if (cart[id]) { saveCart(); updateCartBar(); }
+}
+
+// ── CART ──
+function addItem(id) {
+  cart[id] = (cart[id] || 0) + 1;
+  saveCart(); refreshCtrl(id); updateCartBar();
+}
+function removeItem(id) {
+  if (!cart[id]) return;
+  cart[id]--;
+  if (cart[id] === 0) delete cart[id];
+  saveCart(); refreshCtrl(id); updateCartBar();
+}
+function refreshCtrl(id) {
+  const el  = document.getElementById('ctrl_' + id);
+  if (!el) return;
+  const qty = cart[id] || 0;
+  el.innerHTML = qty === 0
+    ? `<button class="add-btn" onclick="addItem('${id}')">+ ADD</button>`
+    : `<div class="qty-ctrl">
+         <button class="qty-btn" onclick="removeItem('${id}')">−</button>
+         <span class="qty-num">${qty}</span>
+         <button class="qty-btn" onclick="addItem('${id}')">+</button>
+       </div>`;
+}
+function saveCart() {
+  localStorage.setItem('mba_cart', JSON.stringify(cart));
+  const cartItemsSave = allItemsData.filter(i => cart[i.id]).map(i => ({
+    id: i.id, name: i.name, emoji: i.emoji,
+    price: claimed[i.id] ? i.price - ROMAN_DISC : i.price,
+    originalPrice: i.price, ivClaimed: !!claimed[i.id],
+    qty: cart[i.id], isVeg: i.isVeg, category: i.cat
+  }));
+  localStorage.setItem('mba_cart_items', JSON.stringify(cartItemsSave));
+}
+function updateCartBar() {
+  const totalQty = Object.values(cart).reduce((a,b) => a+b, 0);
+  const totalAmt = allItemsData.filter(i => cart[i.id]).reduce((sum, i) => {
+    const p = claimed[i.id] ? i.price - ROMAN_DISC : i.price;
+    return sum + p * (cart[i.id] || 0);
+  }, 0);
+
+  const countEl = document.getElementById('cartCount');
+  countEl.textContent = totalQty;
+  countEl.style.display = totalQty > 0 ? 'flex' : 'none';
+
+  const bar = document.getElementById('cartBar');
+  if (totalQty > 0) {
+    bar.classList.add('show');
+    document.getElementById('cartBarItems').textContent = `${totalQty} item${totalQty > 1 ? 's' : ''} added`;
+    document.getElementById('cartBarAmt').textContent = `₹${totalAmt} →`;
+  } else {
+    bar.classList.remove('show');
+  }
+}
+
+// ── INIT ──
+renderItems();
+updateCartBar();
+</script>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAyOVaQGQKqt0yqJssQZ6t-E7qrA24yooo",
+  authDomain: "mba-foods-mithila.firebaseapp.com",
+  projectId: "mba-foods-mithila",
+  storageBucket: "mba-foods-mithila.firebasestorage.app",
+  messagingSenderId: "1056157932148",
+  appId: "1:1056157932148:web:5c2d044583f18c54e0cf21"
+};
+firebase.initializeApp(firebaseConfig);
+const db   = firebase.firestore();
+const auth = firebase.auth();
+</script>
+</body>
+</html>

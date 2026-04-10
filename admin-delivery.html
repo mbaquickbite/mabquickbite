@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin — Delivery Monitor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root {
+      --dark:#0D1B2A; --dark2:#1A2B3C; --accent:#FF6B00;
+      --green:#2E7D32; --green-light:#E8F5E9;
+      --blue:#1565C0; --blue-light:#E3F2FD;
+      --red:#C62828; --red-light:#FFEBEE;
+      --text:#1A1A1A; --muted:#888; --bg:#F0F4FF; --white:#fff; --border:#DDE3F0;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Poppins',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+    .header { background:var(--dark); padding:14px 16px; display:flex; align-items:center; justify-content:space-between; }
+    .header-title { font-family:'Baloo 2',cursive; font-size:18px; font-weight:800; color:white; }
+    .live-pill { background:var(--green); color:white; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; display:flex; align-items:center; gap:4px; }
+    .live-pill-dot { width:7px; height:7px; border-radius:50%; background:white; animation:blink 1s infinite; }
+    @keyframes blink { 0%,100%{opacity:1}50%{opacity:0.3} }
+
+    .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:12px 16px; }
+    .stat-card { background:var(--white); border-radius:12px; padding:10px; text-align:center; border:0.5px solid var(--border); }
+    .stat-num { font-size:20px; font-weight:700; }
+    .stat-lbl { font-size:10px; color:var(--muted); margin-top:2px; }
+    .stat-num.green { color:var(--green); }
+    .stat-num.orange { color:var(--accent); }
+    .stat-num.blue   { color:var(--blue); }
+
+    #map { width:100%; height:260px; }
+
+    .wrap { padding:12px 16px; }
+    .section-title { font-family:'Baloo 2',cursive; font-size:15px; font-weight:700; margin-bottom:10px; color:var(--text); }
+
+    /* Delivery row */
+    .delivery-row { background:var(--white); border-radius:14px; border:0.5px solid var(--border); padding:12px 14px; margin-bottom:10px; }
+    .del-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+    .del-id { font-size:13px; font-weight:700; color:var(--blue); }
+    .del-status { font-size:11px; font-weight:700; padding:3px 8px; border-radius:20px; }
+    .del-status.accepted  { background:var(--blue-light);  color:var(--blue); }
+    .del-status.picked    { background:#FFF3E8;             color:var(--accent); }
+    .del-status.on_the_way{ background:#E8F5E9;             color:var(--green); }
+    .del-status.delivered { background:#F3E5F5;             color:#6A1B9A; }
+
+    .del-info { display:grid; grid-template-columns:1fr 1fr; gap:4px; font-size:12px; margin-bottom:8px; }
+    .del-info .k { color:var(--muted); font-size:11px; }
+    .del-info .v { font-weight:600; color:var(--text); }
+
+    .del-location { background:var(--blue-light); border-radius:8px; padding:8px 10px; font-size:12px; color:var(--blue); display:flex; align-items:center; gap:6px; margin-bottom:8px; }
+    .del-location b { font-size:13px; }
+
+    .del-actions { display:flex; gap:6px; }
+    .btn-sm { padding:5px 12px; border:none; border-radius:20px; font-family:'Poppins',sans-serif; font-size:11px; font-weight:700; cursor:pointer; }
+    .btn-assign { background:var(--accent); color:white; }
+    .btn-track  { background:var(--blue-light); color:var(--blue); }
+    .btn-call   { background:var(--green-light); color:var(--green); text-decoration:none; display:inline-flex; align-items:center; gap:3px; }
+
+    .empty { text-align:center; padding:40px; color:var(--muted); font-size:13px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">📡 Delivery Monitor</div>
+  <div class="live-pill"><div class="live-pill-dot"></div> Live</div>
+</div>
+
+<!-- Stats -->
+<div class="stats-row">
+  <div class="stat-card"><div class="stat-num orange" id="sActive">0</div><div class="stat-lbl">Active</div></div>
+  <div class="stat-card"><div class="stat-num green"  id="sDelivered">0</div><div class="stat-lbl">Delivered</div></div>
+  <div class="stat-card"><div class="stat-num blue"   id="sBoys">0</div><div class="stat-lbl">Boys Online</div></div>
+  <div class="stat-card"><div class="stat-num"        id="sRevenue">₹0</div><div class="stat-lbl">Today Revenue</div></div>
+</div>
+
+<!-- Map -->
+<div id="map"></div>
+
+<div class="wrap">
+  <div class="section-title">🏍️ Sabhi Deliveries</div>
+  <div id="deliveryList"><div class="empty">Data load ho raha hai...</div></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Firebase -->
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAyOVaQGQKqt0yqJssQZ6t-E7qrA24yooo",
+  authDomain: "mba-foods-mithila.firebaseapp.com",
+  projectId: "mba-foods-mithila",
+  storageBucket: "mba-foods-mithila.firebasestorage.app",
+  messagingSenderId: "1056157932148",
+  appId: "1:1056157932148:web:5c2d044583f18c54e0cf21"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+</script>
+
+<script>
+// ── MAP ──
+const map = L.map('map', { zoomControl:false, attributionControl:false });
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+map.setView([25.5941, 85.1376], 11); // Patna center
+
+const markers = {}; // orderId -> marker
+
+const bikeIcon = (color) => L.divIcon({
+  html:`<div style="background:${color};width:32px;height:32px;border-radius:50%;border:2.5px solid white;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 6px rgba(0,0,0,0.3)">🛵</div>`,
+  className:'', iconSize:[32,32], iconAnchor:[16,16]
+});
+
+// ── LISTEN ──
+db.collection('orders')
+  .where('status', 'in', ['accepted', 'out_for_delivery', 'delivered'])
+  .onSnapshot(snap => {
+    const orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderDeliveries(orders);
+    updateStats(orders);
+    updateMapMarkers(orders);
+  });
+
+db.collection('deliveryBoys')
+  .where('status', '==', 'online')
+  .onSnapshot(snap => {
+    document.getElementById('sBoys').textContent = snap.size;
+  });
+
+function renderDeliveries(orders) {
+  const list = document.getElementById('deliveryList');
+  const active = orders.filter(o => o.deliveryStatus !== 'delivered');
+  const done   = orders.filter(o => o.deliveryStatus === 'delivered').slice(0,3);
+  const all    = [...active, ...done];
+
+  if (!all.length) {
+    list.innerHTML = '<div class="empty">Koi active delivery nahi</div>';
+    return;
+  }
+
+  list.innerHTML = all.map(o => {
+    const loc     = o.deliveryBoyLocation;
+    const village = loc?.village || '';
+    const updated = loc?.updatedAt ? timeAgo(loc.updatedAt) : '';
+    const statusLabel = { accepted:'Accepted', picked:'Pickup', on_the_way:'On The Way', delivered:'Delivered' };
+
+    return `
+    <div class="delivery-row">
+      <div class="del-top">
+        <span class="del-id">#${o.orderId || o.id.slice(-6).toUpperCase()}</span>
+        <span class="del-status ${o.deliveryStatus || 'accepted'}">${statusLabel[o.deliveryStatus] || 'Pending'}</span>
+      </div>
+      <div class="del-info">
+        <div><div class="k">Customer</div><div class="v">${o.customerName || '—'}</div></div>
+        <div><div class="k">Amount</div><div class="v">₹${o.totalAmount}</div></div>
+        <div><div class="k">Delivery Boy</div><div class="v">${o.deliveryBoyName || 'Assign nahi'}</div></div>
+        <div><div class="k">Commission</div><div class="v">₹${o.commission || 100}</div></div>
+      </div>
+      ${village ? `
+      <div class="del-location">
+        📍 <b>${village}</b> &nbsp;—&nbsp; ${updated}
+      </div>` : `
+      <div class="del-location" style="color:#aaa">
+        📍 Location nahi aa rahi
+      </div>`}
+      <div class="del-actions">
+        <a href="tracking.html?orderId=${o.id}" class="btn-sm btn-track">🗺️ Track</a>
+        ${o.deliveryBoyPhone ? `<a href="tel:${o.deliveryBoyPhone}" class="btn-sm btn-call">📞 Boy</a>` : ''}
+        ${o.customerPhone    ? `<a href="tel:${o.customerPhone}"    class="btn-sm btn-call">📞 Customer</a>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateStats(orders) {
+  const active    = orders.filter(o => !['delivered'].includes(o.deliveryStatus)).length;
+  const delivered = orders.filter(o => o.deliveryStatus === 'delivered').length;
+  const revenue   = orders.filter(o => o.deliveryStatus === 'delivered').reduce((s,o) => s + (o.totalAmount||0), 0);
+  document.getElementById('sActive').textContent    = active;
+  document.getElementById('sDelivered').textContent = delivered;
+  document.getElementById('sRevenue').textContent   = '₹' + revenue;
+}
+
+function updateMapMarkers(orders) {
+  orders.forEach(o => {
+    const loc = o.deliveryBoyLocation;
+    if (!loc?.lat) return;
+    const latlng = [loc.lat, loc.lng];
+    const color  = o.deliveryStatus === 'on_the_way' ? '#FF6B00' : o.deliveryStatus === 'delivered' ? '#6A1B9A' : '#1565C0';
+
+    if (markers[o.id]) {
+      markers[o.id].setLatLng(latlng);
+    } else {
+      markers[o.id] = L.marker(latlng, { icon: bikeIcon(color) })
+        .addTo(map)
+        .bindPopup(`<b>#${o.orderId||o.id.slice(-6).toUpperCase()}</b><br>${loc.village||''}<br>${o.deliveryStatus}`);
+    }
+  });
+}
+
+function timeAgo(ts) {
+  try {
+    const d = typeof ts === 'string' ? new Date(ts) : ts.toDate ? ts.toDate() : new Date(ts);
+    const diff = Math.floor((Date.now() - d.getTime()) / 1000);
+    if (diff < 60)   return diff + 's ago';
+    if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+    return Math.floor(diff/3600) + 'h ago';
+  } catch { return ''; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cart — MBA Quick Bite</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --saffron: #FF6B00; --saffron-light: #FFF3E8; --saffron-dark: #CC5500;
+      --green: #2E7D32;   --green-light: #E8F5E9;
+      --red: #C62828;     --red-light: #FFEBEE;
+      --text: #1A1A1A;    --muted: #666;
+      --bg: #FAFAF8;      --white: #fff; --border: #EDEDE8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 100px; }
+
+    .header { background: var(--saffron); padding: 14px 16px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; }
+    .back { color: white; font-size: 22px; text-decoration: none; }
+    .header-title { font-family: 'Baloo 2', cursive; font-size: 20px; font-weight: 800; color: white; flex: 1; }
+
+    .wrap { padding: 16px; }
+    .sec-title { font-family: 'Baloo 2', cursive; font-size: 16px; font-weight: 700; margin-bottom: 12px; }
+
+    /* Progress bar */
+    .progress-wrap { background: var(--white); border-radius: 14px; border: 1px solid var(--border); padding: 12px 14px; margin-bottom: 14px; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
+    .progress-label .left { color: var(--muted); }
+    .progress-label .right { color: var(--green); font-weight: 700; }
+    .progress-track { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--green); border-radius: 3px; transition: width 0.4s ease; }
+    .progress-msg { font-size: 12px; margin-top: 7px; font-weight: 600; }
+    .progress-msg.done { color: var(--green); }
+    .progress-msg.warn { color: var(--red); }
+
+    /* Cart items */
+    .cart-items { background: var(--white); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 14px; }
+    .cart-item { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-bottom: 1px solid var(--border); }
+    .cart-item:last-child { border-bottom: none; }
+    .item-emoji { font-size: 26px; width: 36px; text-align: center; flex-shrink: 0; }
+    .item-info { flex: 1; min-width: 0; }
+    .item-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .item-unit { font-size: 11px; color: var(--muted); margin-top: 1px; }
+    .qty-ctrl { display: flex; align-items: center; gap: 6px; background: var(--saffron); border-radius: 20px; padding: 3px 7px; flex-shrink: 0; }
+    .qty-btn { background: white; border: none; width: 20px; height: 20px; border-radius: 50%; font-size: 13px; font-weight: 800; color: var(--saffron); cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
+    .qty-num { color: white; font-size: 13px; font-weight: 800; min-width: 14px; text-align: center; }
+    .item-total { font-size: 14px; font-weight: 800; color: var(--saffron-dark); min-width: 42px; text-align: right; flex-shrink: 0; }
+
+    /* Upsell banner */
+    .upsell-banner { background: var(--saffron-light); border: 1.5px dashed var(--saffron); border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .upsell-text .big { font-size: 13px; font-weight: 800; color: var(--saffron-dark); }
+    .upsell-text .small { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .upsell-btn { background: var(--saffron); color: white; border: none; border-radius: 20px; padding: 8px 16px; font-family: 'Baloo 2', cursive; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+
+    /* Free delivery badge */
+    .free-del-badge { background: var(--green-light); border: 1px solid #A5D6A7; border-radius: 14px; padding: 10px 14px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--green); }
+
+    /* Bill box */
+    .bill-box { background: var(--white); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 14px; }
+    .bill-title { padding: 12px 14px 8px; font-family: 'Baloo 2', cursive; font-size: 15px; font-weight: 700; border-bottom: 1px solid var(--border); }
+    .bill-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .bill-row:last-child { border-bottom: none; }
+    .bill-row .k { color: var(--muted); }
+
+    /* Delivery row variants */
+    .del-free-row { background: var(--green-light); }
+    .del-free-row .k { color: var(--green); font-weight: 700; }
+    .del-free-row .v { color: var(--green); font-weight: 800; }
+    .del-paid-row .k { color: var(--muted); }
+    .del-paid-wrap { display: flex; align-items: center; gap: 6px; }
+    .del-old { font-size: 11px; color: #aaa; text-decoration: line-through; }
+    .del-new { font-size: 14px; font-weight: 800; color: var(--red); }
+
+    .total-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; font-size: 15px; font-weight: 800; background: var(--saffron-light); border-top: 1px solid var(--border); }
+    .total-row .amt { color: var(--saffron-dark); font-size: 18px; }
+
+    .place-btn { width: 100%; padding: 16px; background: var(--saffron); color: white; border: none; border-radius: 16px; font-family: 'Baloo 2', cursive; font-size: 18px; font-weight: 800; cursor: pointer; }
+    .place-btn:active { transform: scale(0.98); }
+
+    .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty .ei { font-size: 48px; margin-bottom: 12px; }
+    .empty p { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+    .empty a { display: inline-block; padding: 10px 24px; background: var(--saffron); color: white; border-radius: 12px; font-weight: 700; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <a href="menu.html" class="back">←</a>
+  <div class="header-title">🛒 Your Cart</div>
+</div>
+
+<div class="wrap" id="wrap"></div>
+
+<script>
+  const MIN_FREE_DELIVERY = 150;  // ₹150+ = free delivery
+  const DELIVERY_CHARGE   = 49;   // charged if order < ₹150
+
+  let cartItems = JSON.parse(localStorage.getItem('mba_cart_items') || '[]');
+  let cartQty   = JSON.parse(localStorage.getItem('mba_cart') || '{}');
+
+  const wrap = document.getElementById('wrap');
+
+  function getSubtotal() {
+    return cartItems.reduce((sum, item) => {
+      return sum + item.price * (cartQty[item.id] || 1);
+    }, 0);
+  }
+
+  function render() {
+    if (!cartItems.length) {
+      wrap.innerHTML = `<div class="empty">
+        <div class="ei">🛒</div>
+        <p>Cart empty hai!</p>
+        <a href="menu.html">Menu dekho</a>
+      </div>`;
+      return;
+    }
+
+    const subtotal   = getSubtotal();
+    const isFree     = subtotal >= MIN_FREE_DELIVERY;
+    const delivery   = isFree ? 0 : DELIVERY_CHARGE;
+    const grandTotal = subtotal + delivery;
+    const need       = MIN_FREE_DELIVERY - subtotal;           // how much more to add
+    const pct        = Math.min(100, Math.round((subtotal / MIN_FREE_DELIVERY) * 100));
+
+    wrap.innerHTML = `
+
+      <!-- Progress bar -->
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span class="left">Order value</span>
+          <span class="right">${isFree ? '🎉 Free delivery!' : '₹' + need + ' aur jodo'}</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" style="width:${pct}%"></div>
+        </div>
+        <div class="progress-msg ${isFree ? 'done' : 'warn'}">
+          ${isFree
+            ? '✅ ₹150+ order — delivery bilkul FREE!'
+            : '⚠️ ₹' + need + ' aur jodo aur delivery FREE ho jayegi'}
+        </div>
+      </div>
+
+      <!-- Upsell banner (only if order < 150) -->
+      ${!isFree ? `
+      <div class="upsell-banner">
+        <div class="upsell-text">
+          <div class="big">Sirf ₹${need} aur — delivery FREE! 🎁</div>
+          <div class="small">Abhi ₹${DELIVERY_CHARGE} delivery lag rahi hai — thoda aur order karo</div>
+        </div>
+        <button class="upsell-btn" onclick="window.location.href='menu.html'">+ Item Jodo</button>
+      </div>` : ''}
+
+      <!-- Free delivery badge (only if order >= 150) -->
+      ${isFree ? `
+      <div class="free-del-badge">
+        🎉 Badhai ho! Aapka order ₹${MIN_FREE_DELIVERY}+ hai — delivery FREE hai!
+      </div>` : ''}
+
+      <!-- Items list -->
+      <div class="sec-title">Items</div>
+      <div class="cart-items">
+        ${cartItems.map(item => {
+          const qty   = cartQty[item.id] || 1;
+          const total = item.price * qty;
+          return `
+          <div class="cart-item">
+            <div class="item-emoji">${item.emoji || '🍽️'}</div>
+            <div class="item-info">
+              <div class="item-name">${item.name}</div>
+              <div class="item-unit">₹${item.price} × ${qty}</div>
+            </div>
+            <div class="qty-ctrl">
+              <button class="qty-btn" onclick="changeQty('${item.id}', -1)">−</button>
+              <span class="qty-num">${qty}</span>
+              <button class="qty-btn" onclick="changeQty('${item.id}', +1)">+</button>
+            </div>
+            <div class="item-total">₹${total}</div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <!-- Bill -->
+      <div class="bill-box">
+        <div class="bill-title">Bill Details</div>
+        <div class="bill-row">
+          <span class="k">Item subtotal</span>
+          <span>₹${subtotal}</span>
+        </div>
+
+        ${isFree
+          ? `<div class="bill-row del-free-row">
+               <span class="k">🎉 Delivery charge</span>
+               <span class="v">FREE</span>
+             </div>`
+          : `<div class="bill-row del-paid-row">
+               <span class="k">Delivery charge</span>
+               <div class="del-paid-wrap">
+                 <span class="del-new">₹${DELIVERY_CHARGE}</span>
+               </div>
+             </div>`
+        }
+
+        <div class="total-row">
+          <span>Total payable</span>
+          <span class="amt">₹${grandTotal}</span>
+        </div>
+      </div>
+
+      <button class="place-btn" onclick="placeOrder()">
+        Place Order — ₹${grandTotal}
+      </button>
+    `;
+  }
+
+  function changeQty(id, delta) {
+    const item = cartItems.find(i => i.id === id);
+    if (!item) return;
+    const cur  = cartQty[id] || 1;
+    const next = cur + delta;
+    if (next <= 0) {
+      delete cartQty[id];
+      cartItems = cartItems.filter(i => i.id !== id);
+    } else {
+      cartQty[id] = next;
+    }
+    localStorage.setItem('mba_cart',       JSON.stringify(cartQty));
+    localStorage.setItem('mba_cart_items', JSON.stringify(cartItems));
+    render();
+  }
+
+  function placeOrder() {
+    const subtotal = getSubtotal();
+    const delivery = subtotal >= MIN_FREE_DELIVERY ? 0 : DELIVERY_CHARGE;
+    localStorage.setItem('mba_delivery_charge', delivery);
+    localStorage.setItem('mba_grand_total',     subtotal + delivery);
+    window.location.href = 'checkout.html';
+  }
+
+  render();
+</script>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAyOVaQGQKqt0yqJssQZ6t-E7qrA24yooo",
+  authDomain: "mba-foods-mithila.firebaseapp.com",
+  projectId: "mba-foods-mithila",
+  storageBucket: "mba-foods-mithila.firebasestorage.app",
+  messagingSenderId: "1056157932148",
+  appId: "1:1056157932148:web:5c2d044583f18c54e0cf21"
+};
+firebase.initializeApp(firebaseConfig);
+const db   = firebase.firestore();
+const auth = firebase.auth();
+</script>
+</body>
+</html>

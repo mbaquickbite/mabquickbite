@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Track Order — MBA Quick Bite</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root {
+      --saffron:#FF6B00; --saffron-light:#FFF3E8; --saffron-dark:#CC5500;
+      --green:#2E7D32; --green-light:#E8F5E9;
+      --blue:#1565C0; --blue-light:#E3F2FD;
+      --text:#1A1A1A; --muted:#888; --bg:#FAFAF8; --white:#fff; --border:#EDEDE8;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Poppins',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+    .header { background:var(--saffron); padding:14px 16px; display:flex; align-items:center; gap:10px; }
+    .back { color:white; font-size:22px; text-decoration:none; }
+    .header-title { font-family:'Baloo 2',cursive; font-size:20px; font-weight:800; color:white; }
+
+    /* Map */
+    #map { width:100%; height:280px; z-index:1; }
+
+    .wrap { padding:14px 16px; }
+
+    /* Status steps */
+    .status-card { background:var(--white); border-radius:16px; border:0.5px solid var(--border); padding:14px; margin-bottom:12px; }
+    .status-title { font-size:13px; font-weight:700; color:var(--muted); margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; }
+    .live-dot { width:8px; height:8px; border-radius:50%; background:var(--green); display:inline-block; animation:blink 1s infinite; }
+    @keyframes blink { 0%,100%{opacity:1}50%{opacity:0.3} }
+
+    .steps { display:flex; flex-direction:column; gap:0; }
+    .step { display:flex; align-items:stretch; gap:12px; }
+    .step-left { display:flex; flex-direction:column; align-items:center; }
+    .step-circle { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; flex-shrink:0; }
+    .step-circle.done    { background:var(--green); color:white; }
+    .step-circle.active  { background:var(--saffron); color:white; animation:blink 1.2s infinite; }
+    .step-circle.pending { background:#eee; color:#aaa; }
+    .step-line { width:2px; background:#eee; flex:1; min-height:20px; margin:3px 0; }
+    .step-line.done { background:var(--green); }
+    .step-content { padding-bottom:16px; }
+    .step-name { font-size:13px; font-weight:600; color:var(--text); }
+    .step-name.active { color:var(--saffron); }
+    .step-desc { font-size:11px; color:var(--muted); margin-top:2px; }
+
+    /* Delivery boy location card */
+    .location-card { background:var(--blue-light); border-radius:16px; padding:14px; margin-bottom:12px; display:flex; align-items:center; gap:12px; }
+    .loc-avatar { width:44px; height:44px; background:var(--blue); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+    .loc-info { flex:1; }
+    .loc-name { font-size:14px; font-weight:700; color:var(--blue); }
+    .loc-village { font-size:12px; color:var(--blue); margin-top:2px; }
+    .loc-village b { font-size:13px; }
+    .loc-updated { font-size:10px; color:#888; margin-top:3px; }
+    .call-delivery-btn { background:var(--blue); color:white; border:none; border-radius:12px; padding:8px 14px; font-family:'Poppins',sans-serif; font-size:12px; font-weight:700; cursor:pointer; text-decoration:none; display:flex; align-items:center; gap:4px; }
+
+    /* Order summary */
+    .order-card { background:var(--white); border-radius:16px; border:0.5px solid var(--border); padding:14px; margin-bottom:12px; }
+    .order-id { font-size:12px; color:var(--muted); margin-bottom:6px; }
+    .order-items-list { font-size:13px; color:var(--text); margin-bottom:8px; line-height:1.6; }
+    .order-total { font-size:15px; font-weight:800; color:var(--saffron-dark); }
+
+    /* ETA */
+    .eta-banner { background:var(--green); color:white; border-radius:14px; padding:12px 16px; text-align:center; margin-bottom:12px; }
+    .eta-time { font-family:'Baloo 2',cursive; font-size:28px; font-weight:800; }
+    .eta-label { font-size:12px; opacity:0.85; }
+
+    .loading { text-align:center; padding:50px 20px; color:var(--muted); }
+    .loading .li { font-size:40px; margin-bottom:8px; animation:spin 1s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <a href="index.html" class="back">←</a>
+  <div class="header-title">📍 Track Your Order</div>
+</div>
+
+<!-- Map -->
+<div id="map"></div>
+
+<div class="wrap" id="mainWrap">
+  <div class="loading"><div class="li">🔄</div><p>Order dhundh rahe hain...</p></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Firebase Config -->
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAyOVaQGQKqt0yqJssQZ6t-E7qrA24yooo",
+  authDomain: "mba-foods-mithila.firebaseapp.com",
+  projectId: "mba-foods-mithila",
+  storageBucket: "mba-foods-mithila.firebasestorage.app",
+  messagingSenderId: "1056157932148",
+  appId: "1:1056157932148:web:5c2d044583f18c54e0cf21"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+</script>
+
+<script>
+// Get orderId from URL: tracking.html?orderId=ABC123
+const params  = new URLSearchParams(window.location.search);
+const orderId = params.get('orderId') || localStorage.getItem('mba_last_order_id');
+
+// ── MAP SETUP ──
+const map = L.map('map', { zoomControl:true, attributionControl:false });
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+// Markers
+let deliveryMarker = null;
+let customerMarker = null;
+
+const deliveryIcon = L.divIcon({
+  html:`<div style="background:#FF6B00;width:36px;height:36px;border-radius:50%;border:3px solid white;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,0.3)">🛵</div>`,
+  className:'', iconSize:[36,36], iconAnchor:[18,18]
+});
+const customerIcon = L.divIcon({
+  html:`<div style="background:#2E7D32;width:32px;height:32px;border-radius:50%;border:3px solid white;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 8px rgba(0,0,0,0.3)">🏠</div>`,
+  className:'', iconSize:[32,32], iconAnchor:[16,16]
+});
+
+// Patna as default center
+map.setView([25.5941, 85.1376], 12);
+
+// ── STATUS MAP ──
+const STATUS_STEPS = [
+  { key:'accepted',    label:'Order Accept Hua',      desc:'Restaurant pe ja rahe hain',    icon:'✅' },
+  { key:'picked',      label:'Dhaba se Uthaya',        desc:'Aapka khaana pack ho gaya',      icon:'📦' },
+  { key:'on_the_way',  label:'Raste Mein Hai',         desc:'Delivery boy aa raha hai',       icon:'🏍️' },
+  { key:'delivered',   label:'Deliver Ho Gaya!',       desc:'Khana mil gaya — enjoy karo!',   icon:'🎉' },
+];
+
+function getStepIndex(status) {
+  const map = { accepted:0, picked:1, on_the_way:2, delivered:3 };
+  return map[status] ?? 0;
+}
+
+// ── RENDER PAGE ──
+function renderPage(order) {
+  const stepIdx  = getStepIndex(order.deliveryStatus);
+  const loc      = order.deliveryBoyLocation;
+  const village  = loc?.village || 'Location aa rahi hai...';
+  const updatedAgo = loc?.updatedAt ? timeAgo(loc.updatedAt) : '';
+  const isLive   = order.deliveryStatus === 'on_the_way';
+
+  document.getElementById('mainWrap').innerHTML = `
+
+    <!-- ETA -->
+    ${isLive ? `
+    <div class="eta-banner">
+      <div class="eta-time" id="etaTime">~15 min</div>
+      <div class="eta-label">Expected delivery time</div>
+    </div>` : ''}
+
+    <!-- Delivery boy location -->
+    ${loc ? `
+    <div class="location-card">
+      <div class="loc-avatar">🧑</div>
+      <div class="loc-info">
+        <div class="loc-name">Delivery Boy</div>
+        <div class="loc-village">📍 <b id="villageText">${village}</b></div>
+        <div class="loc-updated">Updated: ${updatedAgo}</div>
+      </div>
+      <a href="tel:${order.deliveryBoyPhone || ''}" class="call-delivery-btn">📞 Call</a>
+    </div>` : ''}
+
+    <!-- Status steps -->
+    <div class="status-card">
+      <div class="status-title">
+        Order Status
+        ${order.deliveryStatus !== 'delivered' ? `<span><span class="live-dot"></span> Live</span>` : ''}
+      </div>
+      <div class="steps">
+        ${STATUS_STEPS.map((step, i) => {
+          const isDone   = i < stepIdx;
+          const isActive = i === stepIdx;
+          const isPend   = i > stepIdx;
+          const isLast   = i === STATUS_STEPS.length - 1;
+          return `
+          <div class="step">
+            <div class="step-left">
+              <div class="step-circle ${isDone?'done':isActive?'active':'pending'}">
+                ${isDone ? '✓' : step.icon}
+              </div>
+              ${!isLast ? `<div class="step-line ${isDone?'done':''}"></div>` : ''}
+            </div>
+            <div class="step-content">
+              <div class="step-name ${isActive?'active':''}">${step.label}</div>
+              <div class="step-desc">${step.desc}</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- Order summary -->
+    <div class="order-card">
+      <div class="order-id">Order #${order.orderId || orderId?.slice(-6).toUpperCase()}</div>
+      <div class="order-items-list">${(order.items||[]).map(i=>`${i.name} × ${i.qty}`).join('<br>')}</div>
+      <div class="order-total">₹${order.totalAmount}</div>
+    </div>
+  `;
+
+  // Update map markers
+  if (loc?.lat && loc?.lng) {
+    const latlng = [loc.lat, loc.lng];
+    if (!deliveryMarker) {
+      deliveryMarker = L.marker(latlng, { icon: deliveryIcon }).addTo(map);
+      deliveryMarker.bindPopup('🛵 Delivery Boy').openPopup();
+    } else {
+      deliveryMarker.setLatLng(latlng);
+    }
+    map.setView(latlng, 14);
+  }
+
+  if (order.customerLat && order.customerLng) {
+    const clatlng = [order.customerLat, order.customerLng];
+    if (!customerMarker) {
+      customerMarker = L.marker(clatlng, { icon: customerIcon }).addTo(map);
+      customerMarker.bindPopup('🏠 Delivery Location');
+    }
+    // Fit both markers
+    if (deliveryMarker) {
+      const group = L.featureGroup([deliveryMarker, customerMarker]);
+      map.fitBounds(group.getBounds().pad(0.3));
+    }
+  }
+}
+
+// ── LISTEN REALTIME ──
+function startTracking() {
+  if (!orderId) {
+    document.getElementById('mainWrap').innerHTML = `
+      <div style="text-align:center;padding:50px 20px;color:#aaa">
+        <div style="font-size:40px;margin-bottom:10px">😕</div>
+        <p>Order nahi mila. Cart se order karo.</p>
+      </div>`;
+    return;
+  }
+
+  db.collection('orders').doc(orderId).onSnapshot(snap => {
+    if (!snap.exists) return;
+    const order = { id: snap.id, ...snap.data() };
+    renderPage(order);
+  });
+}
+
+function timeAgo(ts) {
+  try {
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    const diff = Math.floor((Date.now() - d.getTime()) / 1000);
+    if (diff < 60)  return diff + 's pehle';
+    if (diff < 3600) return Math.floor(diff/60) + ' min pehle';
+    return Math.floor(diff/3600) + ' hr pehle';
+  } catch { return ''; }
+}
+
+startTracking();
+</script>
+</body>
+</html>
