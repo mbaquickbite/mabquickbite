@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login — MBA Quick Bite</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <style>
+    :root{--p:#FF6B00;--pd:#CC5500;--pl:#FFF3E8;--g:#2E7D32;--gl:#E8F5E9;--r:#C62828;--txt:#1A1A1A;--mut:#777;--bg:#FAFAF8;--w:#fff;--bor:#EDEDE8;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Poppins',sans-serif;background:linear-gradient(135deg,#FF6B00 0%,#FF8C00 60%,#FFB300 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+    .card{background:var(--w);border-radius:24px;padding:28px 24px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.15);}
+    .logo{text-align:center;margin-bottom:6px;}
+    .logo-text{font-family:'Baloo 2',cursive;font-size:30px;font-weight:800;color:var(--p);}
+    .logo-sub{font-size:13px;color:var(--mut);text-align:center;margin-bottom:28px;}
+    .step{display:none;}.step.active{display:block;}
+    .step-title{font-family:'Baloo 2',cursive;font-size:22px;font-weight:800;margin-bottom:6px;}
+    .step-sub{font-size:13px;color:var(--mut);margin-bottom:22px;}
+    .field label{display:block;font-size:11px;font-weight:700;color:var(--mut);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.05em;}
+    .phone-input{display:flex;border:1.5px solid var(--bor);border-radius:12px;overflow:hidden;transition:border-color 0.2s;}
+    .phone-input:focus-within{border-color:var(--p);}
+    .phone-prefix{padding:11px 12px;background:var(--bg);font-size:14px;font-weight:700;color:var(--txt);border-right:1px solid var(--bor);}
+    .phone-input input{flex:1;padding:11px 14px;border:none;font-family:'Poppins',sans-serif;font-size:16px;outline:none;background:transparent;color:var(--txt);}
+    .otp-inputs{display:flex;gap:10px;justify-content:center;margin:16px 0;}
+    .otp-input{width:46px;height:52px;text-align:center;font-size:22px;font-weight:800;border:1.5px solid var(--bor);border-radius:12px;font-family:'Baloo 2',cursive;outline:none;color:var(--txt);background:var(--bg);transition:border-color 0.2s;}
+    .otp-input:focus{border-color:var(--p);}
+    .otp-input.filled{border-color:var(--p);background:var(--pl);}
+    .btn{width:100%;padding:14px;border:none;border-radius:14px;font-family:'Baloo 2',cursive;font-size:18px;font-weight:700;cursor:pointer;margin-top:6px;transition:all 0.2s;}
+    .btn-primary{background:var(--p);color:white;}
+    .btn-primary:disabled{opacity:0.5;cursor:not-allowed;}
+    .btn-ghost{background:transparent;border:1.5px solid var(--bor);color:var(--txt);font-size:14px;margin-top:8px;}
+    .err{color:var(--r);font-size:12px;text-align:center;margin-top:8px;min-height:18px;}
+    .timer{text-align:center;font-size:12px;color:var(--mut);margin-top:10px;}
+    .resend{color:var(--p);font-weight:700;cursor:pointer;background:none;border:none;font-family:'Poppins',sans-serif;font-size:12px;}
+    #recaptcha-container{display:flex;justify-content:center;margin:12px 0;}
+    .skip-btn{display:block;text-align:center;margin-top:16px;font-size:13px;color:var(--mut);text-decoration:none;}
+    .skip-btn span{color:var(--p);font-weight:700;}
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo"><div class="logo-text">MBA Quick Bite</div></div>
+  <div class="logo-sub">Login karo ya account banao</div>
+  <div class="step active" id="step1">
+    <div class="step-title">📱 Phone Number</div>
+    <div class="step-sub">OTP aayega aapke number pe</div>
+    <div class="field">
+      <label>Mobile Number</label>
+      <div class="phone-input">
+        <span class="phone-prefix">+91</span>
+        <input type="tel" id="phoneInput" placeholder="9876543210" maxlength="10" oninput="this.value=this.value.replace(/\D/g,'')" onkeypress="if(event.key==='Enter')sendOTP()"/>
+      </div>
+    </div>
+    <div id="recaptcha-container"></div>
+    <button class="btn btn-primary" id="sendOTPBtn" onclick="sendOTP()">OTP Bhejo →</button>
+    <div class="err" id="phoneErr"></div>
+    <a href="index.html" class="skip-btn">Guest ke taur pe jao → <span>Skip</span></a>
+  </div>
+  <div class="step" id="step2">
+    <div class="step-title">🔐 OTP Enter Karo</div>
+    <div class="step-sub" id="otpSub">+91 XXXXXXXXXX pe OTP bheja gaya</div>
+    <div class="otp-inputs">
+      <input class="otp-input" id="otp0" maxlength="1" type="tel" oninput="otpInput(this,0)"/>
+      <input class="otp-input" id="otp1" maxlength="1" type="tel" oninput="otpInput(this,1)"/>
+      <input class="otp-input" id="otp2" maxlength="1" type="tel" oninput="otpInput(this,2)"/>
+      <input class="otp-input" id="otp3" maxlength="1" type="tel" oninput="otpInput(this,3)"/>
+      <input class="otp-input" id="otp4" maxlength="1" type="tel" oninput="otpInput(this,4)"/>
+      <input class="otp-input" id="otp5" maxlength="1" type="tel" oninput="otpInput(this,5)"/>
+    </div>
+    <button class="btn btn-primary" id="verifyBtn" onclick="verifyOTP()">✅ Verify Karo</button>
+    <div class="err" id="otpErr"></div>
+    <div class="timer" id="timerDiv">Resend in <span id="timerCount">30</span>s</div>
+    <button class="btn btn-ghost" onclick="goBack()">← Wapas Jao</button>
+  </div>
+  <div class="step" id="step3">
+    <div class="step-title">👋 Aapka Naam?</div>
+    <div class="step-sub">Pehli baar hai — naam batao!</div>
+    <div class="field" style="margin-bottom:14px">
+      <label>Poora Naam</label>
+      <input type="text" id="nameInput" placeholder="Rahul Kumar" style="width:100%;padding:11px 14px;border:1.5px solid var(--bor);border-radius:12px;font-family:'Poppins',sans-serif;font-size:14px;outline:none;" onfocus="this.style.borderColor='#FF6B00'" onblur="this.style.borderColor='#EDEDE8'"/>
+    </div>
+    <button class="btn btn-primary" onclick="saveName()">🚀 Shuru Karein!</button>
+    <div class="err" id="nameErr"></div>
+  </div>
+</div>
+<script>
+const firebaseConfig={apiKey:"AIzaSyAyOVaQGQKqt0yqJssQZ6t-E7qrA24yooo",authDomain:"mba-foods-mithila.firebaseapp.com",projectId:"mba-foods-mithila",storageBucket:"mba-foods-mithila.firebasestorage.app",messagingSenderId:"1056157932148",appId:"1:1056157932148:web:5c2d044583f18c54e0cf21"};
+firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth(),db=firebase.firestore();
+let confirmationResult=null,timerInterval=null;
+auth.onAuthStateChanged(user=>{if(user){const r=sessionStorage.getItem('loginRedirect')||'index.html';window.location.href=r;}});
+window.onload=()=>{window.recaptchaVerifier=new firebase.auth.RecaptchaVerifier('recaptcha-container',{size:'normal',callback:()=>{document.getElementById('sendOTPBtn').disabled=false;},'expired-callback':()=>{document.getElementById('sendOTPBtn').disabled=true;}});window.recaptchaVerifier.render();};
+async function sendOTP(){const phone=document.getElementById('phoneInput').value.trim();const err=document.getElementById('phoneErr');err.textContent='';if(phone.length!==10){err.textContent='❌ 10 digit ka number daalo';return;}const btn=document.getElementById('sendOTPBtn');btn.disabled=true;btn.textContent='Bhej raha hoon...';try{confirmationResult=await auth.signInWithPhoneNumber('+91'+phone,window.recaptchaVerifier);document.getElementById('otpSub').textContent=`+91 ${phone} pe OTP bheja gaya`;showStep('step2');startTimer(30);document.getElementById('otp0').focus();}catch(e){err.textContent='❌ '+(e.code==='auth/too-many-requests'?'Bahut zyada requests. Thodi der baad try karo.':e.message);btn.disabled=false;btn.textContent='OTP Bhejo →';window.recaptchaVerifier.render();}}
+function otpInput(el,idx){el.value=el.value.replace(/\D/g,'');el.classList.toggle('filled',el.value.length>0);if(el.value&&idx<5)document.getElementById('otp'+(idx+1)).focus();if(el.value===''&&idx>0)document.getElementById('otp'+(idx-1)).focus();const otp=Array.from({length:6},(_,i)=>document.getElementById('otp'+i).value).join('');if(otp.length===6)verifyOTP();}
+async function verifyOTP(){const otp=Array.from({length:6},(_,i)=>document.getElementById('otp'+i).value).join('');const err=document.getElementById('otpErr');err.textContent='';if(otp.length<6){err.textContent='❌ 6 digit OTP daalo';return;}const btn=document.getElementById('verifyBtn');btn.disabled=true;btn.textContent='Verify ho raha hai...';try{const result=await confirmationResult.confirm(otp);const user=result.user;const snap=await db.collection('users').doc(user.uid).get();if(!snap.exists){showStep('step3');}else{const r=sessionStorage.getItem('loginRedirect')||'index.html';window.location.href=r;}}catch(e){err.textContent='❌ OTP galat hai!';btn.disabled=false;btn.textContent='✅ Verify Karo';Array.from({length:6},(_,i)=>{const el=document.getElementById('otp'+i);el.value='';el.classList.remove('filled');});document.getElementById('otp0').focus();}}
+async function saveName(){const name=document.getElementById('nameInput').value.trim();const err=document.getElementById('nameErr');if(!name){err.textContent='❌ Naam daalo!';return;}const user=auth.currentUser;await user.updateProfile({displayName:name});await db.collection('users').doc(user.uid).set({uid:user.uid,name,phone:user.phoneNumber,role:'customer',createdAt:firebase.firestore.FieldValue.serverTimestamp()});const r=sessionStorage.getItem('loginRedirect')||'index.html';window.location.href=r;}
+function showStep(id){document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function goBack(){clearInterval(timerInterval);showStep('step1');Array.from({length:6},(_,i)=>{const el=document.getElementById('otp'+i);el.value='';el.classList.remove('filled');});}
+function startTimer(secs){clearInterval(timerInterval);document.getElementById('timerDiv').innerHTML=`Resend in <span id="timerCount">${secs}</span>s`;let r=secs;timerInterval=setInterval(()=>{r--;const tc=document.getElementById('timerCount');if(tc)tc.textContent=r;if(r<=0){clearInterval(timerInterval);document.getElementById('timerDiv').innerHTML=`<button class="resend" onclick="resendOTP()">🔄 OTP Dobara Bhejo</button>`;}},1000);}
+async function resendOTP(){const phone=document.getElementById('phoneInput').value.trim();try{confirmationResult=await auth.signInWithPhoneNumber('+91'+phone,window.recaptchaVerifier);startTimer(30);document.getElementById('otpErr').textContent='✅ OTP dobara bheja gaya!';}catch(e){document.getElementById('otpErr').textContent='❌ '+e.message;}}
+</script>
+</body>
+</html>
