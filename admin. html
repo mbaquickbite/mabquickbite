@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#FF4F00">
+<title>MBA Foods — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--p:#FF4F00;--pd:#CC3E00;--acc:#FFB800;--bg:#0A0907;--sur:#161310;--sur2:#1E1B17;--bor:rgba(255,255,255,0.08);--txt:#F5F0EB;--mut:#7A7068;--grn:#00C566;--red:#FF4444;--blue:#4F8EFF;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;padding-bottom:40px;}
+#ldr{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:999;}
+.sp{width:34px;height:34px;border:3px solid var(--bor);border-top-color:var(--p);border-radius:50%;animation:spin .75s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.tb{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:var(--sur);border-bottom:1px solid var(--bor);position:sticky;top:0;z-index:100;}
+.tb-left{display:flex;align-items:center;gap:9px;}
+.tb-logo{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;}
+.tb-logo b{color:var(--p);}
+.role-chip{background:rgba(255,79,0,.12);color:var(--p);border:1px solid rgba(255,79,0,.22);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.ic-btn{width:36px;height:36px;background:transparent;border:1.5px solid var(--bor);border-radius:10px;color:var(--mut);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.hero{padding:16px;background:linear-gradient(135deg,rgba(255,79,0,.1) 0%,transparent 55%);}
+.hero-title{font-family:'Syne',sans-serif;font-size:21px;font-weight:800;}
+.hero-sub{font-size:13px;color:var(--mut);margin-top:3px;}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:13px 16px;}
+.sc{background:var(--sur);border:1.5px solid var(--bor);border-radius:15px;padding:14px;}
+.sc-row{display:flex;justify-content:space-between;align-items:flex-start;}
+.sc-ico{font-size:22px;}
+.sc-num{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-top:6px;}
+.sc-lbl{font-size:11px;color:var(--mut);margin-top:2px;}
+.sc-wide{grid-column:1/-1;background:linear-gradient(135deg,rgba(255,184,0,.08),rgba(255,79,0,.05));border-color:rgba(255,184,0,.2);}
+.tabs{display:flex;border-bottom:1px solid var(--bor);overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.tab{padding:12px 16px;border:none;background:transparent;color:var(--mut);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;border-bottom:2.5px solid transparent;white-space:nowrap;transition:all .2s;flex-shrink:0;}
+.tab.on{color:var(--p);border-bottom-color:var(--p);}
+.tpnl{display:none;padding:14px 16px;}
+.tpnl.on{display:block;}
+.live-dot{display:inline-block;width:7px;height:7px;background:var(--grn);border-radius:50%;margin-right:5px;animation:blink 1.2s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.25;}}
+.oc{background:var(--sur);border:1.5px solid var(--bor);border-radius:16px;padding:14px;margin-bottom:10px;transition:border-color .2s;}
+.oc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.oc-id{font-size:13px;font-weight:800;color:var(--acc);}
+.oc-items{font-size:14px;font-weight:600;margin-bottom:4px;}
+.oc-detail{font-size:12px;color:var(--mut);margin-bottom:3px;display:flex;align-items:flex-start;gap:4px;}
+.oc-foot{display:flex;justify-content:space-between;align-items:center;margin-top:11px;flex-wrap:wrap;gap:8px;}
+.oc-total{font-size:15px;font-weight:800;color:var(--p);}
+.acts{display:flex;gap:6px;flex-wrap:wrap;}
+.abtn{padding:7px 13px;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;display:inline-flex;align-items:center;gap:4px;}
+.a-accept{background:rgba(0,197,102,.12);color:var(--grn);border:1px solid rgba(0,197,102,.25);}
+.a-reject{background:rgba(255,68,68,.1);color:var(--red);border:1px solid rgba(255,68,68,.2);}
+.a-assign{background:rgba(79,142,255,.1);color:var(--blue);border:1px solid rgba(79,142,255,.22);}
+.a-done{background:rgba(0,197,102,.12);color:var(--grn);border:1px solid rgba(0,197,102,.25);}
+.sb{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:700;}
+.s-pend{background:rgba(255,184,0,.12);color:var(--acc);}
+.s-prep{background:rgba(79,142,255,.12);color:var(--blue);}
+.s-out{background:rgba(255,79,0,.1);color:var(--p);}
+.s-done{background:rgba(0,197,102,.12);color:var(--grn);}
+.s-rej{background:rgba(255,68,68,.1);color:var(--red);}
+.utbl{background:var(--sur);border:1.5px solid var(--bor);border-radius:16px;overflow:hidden;}
+.uth{display:grid;grid-template-columns:1fr 90px 60px;padding:10px 14px;background:var(--sur2);font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase;}
+.utr{display:grid;grid-template-columns:1fr 90px 60px;padding:12px 14px;border-top:1px solid var(--bor);align-items:center;}
+.un{font-size:13px;font-weight:600;}
+.ue{font-size:11px;color:var(--mut);margin-top:1px;}
+.rsel{background:var(--sur2);border:1.5px solid var(--bor);color:var(--txt);border-radius:9px;padding:4px 7px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:600;outline:none;}
+.mi-card{background:var(--sur);border:1.5px solid var(--bor);border-radius:14px;padding:13px 14px;margin-bottom:9px;display:flex;align-items:center;gap:12px;}
+.mi-info{flex:1;min-width:0;}
+.mi-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mi-meta{font-size:11px;color:var(--mut);margin-top:2px;}
+.mi-price-badge{font-size:13px;font-weight:800;color:var(--p);}
+.mi-acts{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.tog{position:relative;width:38px;height:22px;cursor:pointer;}
+.tog input{opacity:0;width:0;height:0;position:absolute;}
+.tog-sl{position:absolute;inset:0;background:var(--sur2);border:1.5px solid var(--bor);border-radius:11px;transition:all .2s;}
+.tog input:checked + .tog-sl{background:var(--grn);border-color:var(--grn);}
+.tog-sl::after{content:'';position:absolute;left:3px;top:50%;transform:translateY(-50%);width:14px;height:14px;background:#fff;border-radius:50%;transition:left .2s;}
+.tog input:checked + .tog-sl::after{left:19px;}
+.ic-edit{width:30px;height:30px;background:rgba(79,142,255,.1);border:1px solid rgba(79,142,255,.2);border-radius:8px;color:var(--blue);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.ic-del{width:30px;height:30px;background:rgba(255,68,68,.08);border:1px solid rgba(255,68,68,.18);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.fm-field{margin-bottom:12px;}
+.fm-label{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--mut);display:block;margin-bottom:5px;}
+.fm-input{width:100%;padding:11px 13px;background:var(--sur2);border:1.5px solid var(--bor);border-radius:11px;color:var(--txt);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s;}
+.fm-input:focus{border-color:var(--p);}
+.fm-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.fm-check-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.fm-check-row input{accent-color:var(--grn);width:16px;height:16px;cursor:pointer;}
+.photo-upload-box{width:100%;height:140px;border:2px dashed rgba(255,79,0,.3);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;position:relative;overflow:hidden;background:var(--sur2);margin-bottom:12px;}
+.photo-upload-box img{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;border-radius:12px;}
+.photo-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;z-index:1;}
+.photo-upload-box input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:2;}
+.photo-progress{height:4px;background:rgba(255,79,0,.15);border-radius:2px;margin-bottom:12px;display:none;}
+.photo-progress-bar{height:100%;background:var(--p);border-radius:2px;width:0%;transition:width .3s;}
+.ana-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px;}
+.ana-card{background:var(--sur);border:1.5px solid var(--bor);border-radius:15px;padding:14px;}
+.ana-num{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--acc);}
+.ana-lbl{font-size:11px;color:var(--mut);margin-top:3px;}
+.cat-filter{display:flex;gap:6px;overflow-x:auto;padding:4px 0 10px;scrollbar-width:none;}
+.cat-filter::-webkit-scrollbar{display:none;}
+.cat-chip{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--bor);background:transparent;color:var(--mut);white-space:nowrap;transition:all .2s;font-family:'DM Sans',sans-serif;}
+.cat-chip.on{background:rgba(255,79,0,.12);border-color:var(--p);color:var(--p);}
+.top-item-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--bor);font-size:13px;}
+.top-item-row:last-child{border-bottom:none;}
+.btn-full{width:100%;padding:12px;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px;}
+.btn-primary{background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;box-shadow:0 4px 14px rgba(255,79,0,.25);}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+.btn-ghost{background:transparent;color:var(--txt);border:1.5px solid var(--bor);}
+.add-food-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:rgba(255,79,0,.06);border:1.5px dashed rgba(255,79,0,.3);border-radius:14px;color:var(--p);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;margin-bottom:12px;}
+.pay-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;}
+.pay-paid{background:rgba(0,197,102,.1);color:var(--grn);border:1px solid rgba(0,197,102,.2);}
+.pay-cod{background:rgba(255,184,0,.1);color:var(--acc);border:1px solid rgba(255,184,0,.2);}
+.pay-upi{background:rgba(79,142,255,.1);color:var(--blue);border:1px solid rgba(79,142,255,.2);}
+.ovl{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;align-items:flex-end;justify-content:center;}
+.ovl.open{display:flex;animation:bi .2s ease;}
+@keyframes bi{from{opacity:0;}to{opacity:1;}}
+.modal{background:var(--sur);border-radius:22px 22px 0 0;padding:22px 16px 36px;width:100%;max-width:480px;animation:mu .3s cubic-bezier(.22,.61,.36,1);}
+@keyframes mu{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.m-h{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:16px;}
+.db-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--bor);}
+.db-name{font-size:14px;font-weight:600;}
+.db-status{font-size:11px;margin-top:2px;}
+.db-on{color:var(--grn);}
+.db-off{color:var(--mut);}
+.abtn-assign{padding:8px 15px;background:var(--p);color:#fff;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.btn-cancel{width:100%;padding:12px;background:transparent;border:1.5px solid var(--bor);border-radius:12px;color:var(--txt);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;margin-top:14px;}
+.empty{text-align:center;padding:32px;color:var(--mut);}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--sur2);border:1px solid var(--bor);padding:10px 18px;border-radius:12px;font-size:13px;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;z-index:400;}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div id="ldr"><div class="sp"></div><span style="font-size:13px;color:var(--mut)">Checking access...</span></div>
+<div id="app" style="display:none">
+  <div class="tb">
+    <div class="tb-left">
+      <div class="tb-logo">MBA <b>Foods</b></div>
+      <span class="role-chip">🛡️ Admin</span>
+    </div>
+    <button class="ic-btn" onclick="logout()" title="Logout">🚪</button>
+  </div>
+  <div class="hero">
+    <div class="hero-title">Admin Dashboard</div>
+    <div class="hero-sub" id="aGreet">Welcome!</div>
+  </div>
+  <div class="stats">
+    <div class="sc"><div class="sc-row"><div><div class="sc-num" id="stOrd">—</div><div class="sc-lbl">Total Orders</div></div><span class="sc-ico">📦</span></div></div>
+    <div class="sc"><div class="sc-row"><div><div class="sc-num" id="stPend">—</div><div class="sc-lbl">Pending</div></div><span class="sc-ico">⏳</span></div></div>
+    <div class="sc"><div class="sc-row"><div><div class="sc-num" id="stUsers">—</div><div class="sc-lbl">Users</div></div><span class="sc-ico">👥</span></div></div>
+    <div class="sc"><div class="sc-row"><div><div class="sc-num" id="stDel">—</div><div class="sc-lbl">Delivery Boys</div></div><span class="sc-ico">🛵</span></div></div>
+    <div class="sc sc-wide"><div class="sc-row"><div><div class="sc-num" id="stRev" style="color:var(--acc)">—</div><div class="sc-lbl">Total Revenue</div></div><span class="sc-ico">💰</span></div></div>
+  </div>
+  <div class="tabs">
+    <button class="tab on" id="tab0" onclick="swTab(0)"><span class="live-dot"></span>Live</button>
+    <button class="tab" id="tab1" onclick="swTab(1)">✅ Done</button>
+    <button class="tab" id="tab2" onclick="swTab(2)">👥 Users</button>
+    <button class="tab" id="tab3" onclick="swTab(3)">🍱 Menu</button>
+    <button class="tab" id="tab4" onclick="swTab(4)">📊 Stats</button>
+  </div>
+  <div class="tpnl on" id="t0"><div id="liveList"><div class="empty">Orders load ho rahi hain...</div></div></div>
+  <div class="tpnl" id="t1"><div id="doneList"><div class="empty">Load hoga jab click karoge</div></div></div>
+  <div class="tpnl" id="t2"><div class="utbl"><div class="uth"><span>User</span><span>Role</span><span>Points</span></div><div id="usersList"><div class="empty">Load hoga</div></div></div></div>
+  <div class="tpnl" id="t3">
+    <button class="add-food-btn" onclick="openFoodModal()">+ Naya Item Add Karo</button>
+    <div class="cat-filter" id="menuCatFilter">
+      <button class="cat-chip on" onclick="filterMenu('All',this)">All</button>
+      <button class="cat-chip" onclick="filterMenu('Burger',this)">🍔 Burger</button>
+      <button class="cat-chip" onclick="filterMenu('Noodles',this)">🍜 Noodles</button>
+      <button class="cat-chip" onclick="filterMenu('Momos',this)">🥟 Momos</button>
+      <button class="cat-chip" onclick="filterMenu('Pizza',this)">🍕 Pizza</button>
+      <button class="cat-chip" onclick="filterMenu('Roll',this)">🌯 Roll</button>
+      <button class="cat-chip" onclick="filterMenu('Snacks',this)">🍟 Snacks</button>
+      <button class="cat-chip" onclick="filterMenu('Soup',this)">🍲 Soup</button>
+    </div>
+    <div id="menuList"><div class="empty">Menu load ho raha hai...</div></div>
+  </div>
+  <div class="tpnl" id="t4"><div id="analyticsList"><div class="empty">Stats load ho rahe hain...</div></div></div>
+</div>
+<div class="ovl" id="foodOvl" onclick="if(event.target===this)closeFoodModal()">
+  <div class="modal" style="max-height:90vh;overflow-y:auto;">
+    <div class="m-h" id="foodModalTitle">🍱 Naya Item Add Karo</div>
+    <input type="hidden" id="foodEditId">
+    <input type="hidden" id="fPhotoUrl">
+    <div class="fm-label">Item Ki Photo</div>
+    <div class="photo-upload-box" id="photoBox">
+      <img id="photoPreview" src="" style="display:none">
+      <div class="photo-overlay" id="photoOverlay">
+        <span style="font-size:28px">📸</span>
+        <span style="font-size:12px;color:#ccc">Photo upload karo</span>
+      </div>
+      <input type="file" id="fPhoto" accept="image/*" onchange="handlePhotoSelect(this)">
+    </div>
+    <div class="photo-progress" id="photoProgress"><div class="photo-progress-bar" id="photoProgressBar"></div></div>
+    <div class="fm-field"><label class="fm-label">Emoji</label><input class="fm-input" id="fEmoji" placeholder="🍛" maxlength="4"></div>
+    <div class="fm-field"><label class="fm-label">Item Ka Naam *</label><input class="fm-input" id="fName" placeholder="Mithila Thali"></div>
+    <div class="fm-field"><label class="fm-label">Category *</label>
+      <select class="fm-input" id="fCategory">
+        <option value="">-- Category choose karo --</option>
+        <option value="Burger">🍔 Burger</option>
+        <option value="Noodles">🍜 Noodles</option>
+        <option value="Momos">🥟 Momos</option>
+        <option value="Pizza">🍕 Pizza</option>
+        <option value="Roll">🌯 Roll</option>
+        <option value="Snacks">🍟 Snacks</option>
+        <option value="Soup">🍲 Soup</option>
+        <option value="Biryani">🍚 Biryani</option>
+        <option value="Thali">🍱 Thali</option>
+        <option value="Drinks">🥤 Drinks</option>
+      </select>
+    </div>
+    <div class="fm-field"><label class="fm-label">Description</label><input class="fm-input" id="fDesc" placeholder="Dal, Sabzi, Rice, Roti"></div>
+    <div class="fm-row">
+      <div class="fm-field"><label class="fm-label">Base Price (₹) *</label><input class="fm-input" id="fBasePrice" type="number" placeholder="99" min="1" oninput="calcFinalPrice()"></div>
+      <div class="fm-field"><label class="fm-label">Markup (₹)</label><input class="fm-input" id="fMarkup" type="number" placeholder="81" value="81" oninput="calcFinalPrice()"></div>
+    </div>
+    <div style="background:rgba(255,184,0,.08);border:1px solid rgba(255,184,0,.2);border-radius:10px;padding:10px 13px;margin-bottom:12px;font-size:13px;">💰 Customer Price: <strong id="finalPriceShow" style="color:var(--acc);font-size:16px">₹0</strong></div>
+    <div class="fm-field"><label class="fm-label">Sequence No.</label><input class="fm-input" id="fOrder" type="number" placeholder="1" min="1"></div>
+    <div class="fm-check-row"><input type="checkbox" id="fVeg" checked><label for="fVeg">🟢 Veg item hai</label></div>
+    <div class="fm-check-row"><input type="checkbox" id="fAvail" checked><label for="fAvail">✅ Available</label></div>
+    <button class="btn-full btn-primary" id="saveFoodBtn" onclick="saveFood()">💾 Save Karo</button>
+    <button class="btn-full btn-ghost" onclick="closeFoodModal()">Cancel</button>
+  </div>
+</div>
+<div class="ovl" id="assignOvl" onclick="if(event.target===this)closeAssign()">
+  <div class="modal">
+    <div class="m-h">🛵 Delivery Boy Assign Karo</div>
+    <div id="dbList"><div class="empty">Loading...</div></div>
+    <button class="btn-cancel" onclick="closeAssign()">Cancel</button>
+  </div>
+</div>
+<div id="toast"></div>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import{getAuth,onAuthStateChanged,signOut as fbOut}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import{getFirestore,doc,getDoc,updateDoc,addDoc,deleteDoc,collection,query,where,orderBy,limit,onSnapshot,getDocs,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import{getStorage,ref,uploadBytesResumable,getDownloadURL}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+const CFG={apiKey:"AIzaSyAyOVaQGQKqt0yqJssQZ6t-E7qrA24yooo",authDomain:"mba-foods-mithila.firebaseapp.com",projectId:"mba-foods-mithila",storageBucket:"mba-foods-mithila.firebasestorage.app",messagingSenderId:"1056157932148",appId:"1:1056157932148:web:5c2d044583f18c54e0cf21"}
